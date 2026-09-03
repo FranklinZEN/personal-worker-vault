@@ -1,0 +1,11 @@
+{
+  "$id": "vault-next://schemas/v1/events/triage-completed",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "route_type": {"enum": ["explicit_profile", "inferred_profile", "dynamic"], "type": "string"},
+    "triage_plan_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+  },
+  "required": ["route_type", "triage_plan_sha256"],
+  "type": "object"
+}

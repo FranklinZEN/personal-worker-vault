@@ -1,0 +1,17 @@
+{
+  "$id": "vault-next://schemas/v1/policy-result",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "approval_ref": {
+      "pattern": "^approval_[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+      "type": ["string", "null"]
+    },
+    "reason_code": {"minLength": 1, "type": "string"},
+    "result": {"enum": ["allow", "deny", "requires_owner_approval"], "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"}
+  },
+  "required": ["schema_version", "result", "reason_code", "approval_ref"],
+  "title": "Vault Next policy result",
+  "type": "object"
+}

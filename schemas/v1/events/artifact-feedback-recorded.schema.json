@@ -1,0 +1,24 @@
+{
+  "$id": "vault-next://schemas/v1/events/artifact-feedback-recorded",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifact_id": {"pattern": "^artifact_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "content_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "disposition": {"enum": ["open", "addressed", "declined"], "type": "string"},
+    "explicit_confirmation": {"const": true, "type": "boolean"},
+    "feedback": {"minLength": 1, "type": "string"},
+    "feedback_id": {"pattern": "^feedback_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "version_id": {"pattern": "^artifact_version_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}
+  },
+  "required": [
+    "feedback_id",
+    "artifact_id",
+    "version_id",
+    "content_sha256",
+    "feedback",
+    "disposition",
+    "explicit_confirmation"
+  ],
+  "type": "object"
+}

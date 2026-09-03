@@ -1,0 +1,14 @@
+{
+  "$id": "vault-next://schemas/v1/events/artifact-withdrawn",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifact_id": {"pattern": "^artifact_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "content_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "explicit_confirmation": {"const": true, "type": "boolean"},
+    "reason": {"minLength": 1, "type": "string"},
+    "version_id": {"pattern": "^artifact_version_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}
+  },
+  "required": ["artifact_id", "version_id", "content_sha256", "reason", "explicit_confirmation"],
+  "type": "object"
+}

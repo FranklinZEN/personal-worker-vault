@@ -1,0 +1,28 @@
+{
+  "$id": "vault-next://schemas/v1/events/work-item-status-changed",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "blocker": {"type": ["string", "null"]},
+    "due_on": {"pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$", "type": ["string", "null"]},
+    "explicit_confirmation": {"const": true, "type": "boolean"},
+    "from_status": {"enum": ["proposed", "open", "in_progress", "waiting", "done", "cancelled"], "type": "string"},
+    "next_review_on": {"pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$", "type": ["string", "null"]},
+    "priority": {"enum": ["low", "normal", "high", null], "type": ["string", "null"]},
+    "reason": {"minLength": 1, "type": "string"},
+    "to_status": {"enum": ["open", "in_progress", "waiting", "done", "cancelled"], "type": "string"},
+    "work_item_id": {"pattern": "^work_item_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}
+  },
+  "required": [
+    "work_item_id",
+    "from_status",
+    "to_status",
+    "reason",
+    "priority",
+    "due_on",
+    "next_review_on",
+    "blocker",
+    "explicit_confirmation"
+  ],
+  "type": "object"
+}

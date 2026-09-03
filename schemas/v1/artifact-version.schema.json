@@ -1,0 +1,66 @@
+{
+  "$id": "vault-next://schemas/v1/artifact-version",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "addressed_feedback_ids": {
+      "items": {"pattern": "^feedback_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+      "type": "array",
+      "uniqueItems": true
+    },
+    "artifact_id": {"pattern": "^artifact_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "byte_count": {"type": "integer"},
+    "change_summary": {"minLength": 1, "type": "string"},
+    "content_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "created_at": {"format": "date-time", "type": "string"},
+    "media_type": {"minLength": 1, "type": "string"},
+    "object_ref": {"pattern": "^sha256/[0-9a-f]{2}/[0-9a-f]{64}$", "type": "string"},
+    "prior_version_id": {
+      "pattern": "^artifact_version_[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+      "type": ["string", "null"]
+    },
+    "producer": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {"minLength": 1, "type": "string"},
+        "type": {"enum": ["runtime", "skill"], "type": "string"}
+      },
+      "required": ["type", "id"],
+      "type": "object"
+    },
+    "purpose": {"minLength": 1, "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "source_event_ids": {
+      "items": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+      "type": "array",
+      "uniqueItems": true
+    },
+    "source_watermark": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "status": {"enum": ["working", "review_pending"], "type": "string"},
+    "version_id": {
+      "pattern": "^artifact_version_[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+      "type": "string"
+    },
+    "version_number": {"type": "integer"}
+  },
+  "required": [
+    "schema_version",
+    "artifact_id",
+    "version_id",
+    "version_number",
+    "purpose",
+    "media_type",
+    "content_sha256",
+    "byte_count",
+    "object_ref",
+    "created_at",
+    "producer",
+    "source_event_ids",
+    "source_watermark",
+    "prior_version_id",
+    "addressed_feedback_ids",
+    "change_summary",
+    "status"
+  ],
+  "type": "object"
+}

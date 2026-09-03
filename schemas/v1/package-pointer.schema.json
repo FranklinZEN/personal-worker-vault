@@ -1,0 +1,30 @@
+{
+  "$id": "vault-next://schemas/v1/package-pointer",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "activated_at": {"format": "date-time", "type": ["string", "null"]},
+    "approval_ref": {
+      "pattern": "^approval_[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+      "type": ["string", "null"]
+    },
+    "digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "package_id": {"minLength": 1, "type": "string"},
+    "package_type": {"enum": ["profile", "skill", "framework"], "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "status": {"enum": ["candidate", "active", "suspended", "deprecated"], "type": "string"},
+    "version": {"minLength": 1, "type": "string"}
+  },
+  "required": [
+    "schema_version",
+    "package_type",
+    "package_id",
+    "version",
+    "digest",
+    "status",
+    "approval_ref",
+    "activated_at"
+  ],
+  "title": "Vault Next immutable package pointer metadata",
+  "type": "object"
+}

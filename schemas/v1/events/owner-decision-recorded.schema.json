@@ -1,0 +1,13 @@
+{
+  "$id": "vault-next://schemas/v1/events/owner-decision-recorded",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "decision_id": {"pattern": "^decision_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "decision": {"minLength": 1, "type": "string"},
+    "explicit_confirmation": {"type": "boolean"},
+    "language": {"minLength": 1, "type": "string"}
+  },
+  "required": ["explicit_confirmation"],
+  "type": "object"
+}

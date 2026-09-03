@@ -1,0 +1,76 @@
+{
+  "$id": "vault-next://schemas/v1/triage-plan",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "1.0", "type": "string"},
+    "triage_plan_id": {"pattern": "^triage_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "version": {"minLength": 1, "type": "string"},
+    "session_id": {"pattern": "^session_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "created_at": {"format": "date-time", "type": "string"},
+    "classification": {"additionalProperties": true, "type": "object"},
+    "interaction": {"type": "object"},
+    "applied_config_sources": {"items": {"type": "string"}, "type": "array", "uniqueItems": true},
+    "package_pointers": {"items": {"type": "object"}, "type": "array"},
+    "plan_id": {"pattern": "^triage_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "plan_version": {"const": "1.0", "type": "string"},
+    "request_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "route_type": {"enum": ["explicit_profile", "explicit_shortcut", "recognized_phrase", "inferred_profile", "dynamic"], "type": "string"},
+    "profile_match": {"type": ["object", "null"]},
+    "family_match": {"type": ["object", "null"]},
+    "rejected_profile_ids": {"items": {"type": "string"}, "type": "array", "uniqueItems": true},
+    "rejected_profiles": {"items": {"type": "object"}, "type": "array"},
+    "configuration": {
+      "additionalProperties": false,
+      "properties": {
+        "values": {"additionalProperties": true, "type": "object"},
+        "sources": {"additionalProperties": true, "type": "object"},
+        "denied_overrides": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "key": {"type": "string"},
+              "layer": {"type": "string"},
+              "reason": {"type": "string"}
+            },
+            "required": ["key", "layer", "reason"],
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["values", "sources", "denied_overrides"],
+      "type": "object"
+    },
+    "required_work_units": {"items": {"minLength": 1, "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+    "selected_packages": {"items": {"type": "object"}, "type": "array", "uniqueItems": true},
+    "omitted_skills": {"items": {"type": "object"}, "type": "array"},
+    "profile_initialization": {"type": "object"},
+    "framework": {"type": "object"},
+    "unique_contributions": {"additionalProperties": true, "type": "object"},
+    "work_unit_contributors": {"additionalProperties": true, "type": "object"},
+    "permissions": {
+      "additionalProperties": false,
+      "properties": {
+        "requested": {"items": {"type": "string"}, "type": "array", "uniqueItems": true},
+        "granted": {"items": {"type": "string"}, "type": "array", "uniqueItems": true}
+      },
+      "required": ["requested", "granted"],
+      "type": "object"
+    },
+    "clarification": {
+      "additionalProperties": false,
+      "properties": {
+        "needed": {"type": "boolean"},
+        "missing_inputs": {"items": {"type": "string"}, "type": "array", "uniqueItems": true},
+        "question": {"type": ["string", "null"]}
+      },
+      "required": ["needed", "missing_inputs", "question"],
+      "type": "object"
+    },
+    "generated_at": {"format": "date-time", "type": "string"},
+    "plan_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+  },
+  "required": ["schema_version", "route_type", "profile_match"],
+  "type": "object"
+}

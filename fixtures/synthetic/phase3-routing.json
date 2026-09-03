@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.0",
+  "fixtures": [
+    {
+      "fixture_id": "route-shortcut-deep-dive",
+      "text": "/deep-dive invented topic",
+      "supplied_inputs": {},
+      "required_work_units": ["source_comprehension", "option_design", "synthesis", "red_team"],
+      "preferred_framework_id": "framework_synthesis",
+      "expected_route_type": "explicit_shortcut",
+      "expected_profile_id": "profile_deep_dive",
+      "expected_skill_ids": ["skill_comprehension", "skill_option_design", "skill_red_team", "skill_synthesis"],
+      "expected_framework_id": "framework_synthesis"
+    },
+    {
+      "fixture_id": "route-phrase-meeting-prep",
+      "text": "meeting prep for invented review",
+      "supplied_inputs": {"meeting_purpose": "invented review"},
+      "required_work_units": ["context_assessment", "synthesis", "red_team"],
+      "preferred_framework_id": "framework_synthesis",
+      "expected_route_type": "recognized_phrase",
+      "expected_profile_id": "profile_meeting_prep",
+      "expected_skill_ids": ["skill_comprehension", "skill_red_team", "skill_synthesis"],
+      "expected_framework_id": "framework_synthesis"
+    },
+    {
+      "fixture_id": "route-inferred-interview",
+      "text": "Help me get ready for an invented interview",
+      "supplied_inputs": {"role": "invented"},
+      "required_work_units": ["source_comprehension", "synthesis", "red_team"],
+      "preferred_framework_id": "framework_consultation",
+      "expected_route_type": "inferred_profile",
+      "expected_profile_id": "profile_interview_prep",
+      "expected_skill_ids": ["skill_comprehension", "skill_red_team", "skill_synthesis"],
+      "expected_framework_id": "framework_consultation"
+    },
+    {
+      "fixture_id": "route-near-miss-interview",
+      "text": "Review an interview transcript without preparing an interview",
+      "supplied_inputs": {},
+      "required_work_units": ["source_comprehension"],
+      "preferred_framework_id": "framework_specialist",
+      "expected_route_type": "dynamic",
+      "expected_profile_id": null,
+      "expected_skill_ids": ["skill_comprehension"],
+      "expected_framework_id": "framework_specialist"
+    },
+    {
+      "fixture_id": "route-novel-dynamic",
+      "text": "Calibrate an invented orbital garden rhythm",
+      "supplied_inputs": {},
+      "required_work_units": ["context_assessment", "option_design"],
+      "preferred_framework_id": "framework_committee",
+      "expected_route_type": "dynamic",
+      "expected_profile_id": null,
+      "expected_skill_ids": ["skill_comprehension", "skill_option_design"],
+      "expected_framework_id": "framework_committee"
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "$id": "vault-next://schemas/v1/events/event-correction-recorded",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "corrected_values": {"additionalProperties": true, "type": "object"},
+    "corrects_event_id": {
+      "pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+      "type": "string"
+    }
+  },
+  "required": ["corrects_event_id", "corrected_values"],
+  "type": "object"
+}

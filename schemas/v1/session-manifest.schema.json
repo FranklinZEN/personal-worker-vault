@@ -1,0 +1,155 @@
+{
+  "$id": "vault-next://schemas/v1/session-manifest",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "authorized_context": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "purpose": {"minLength": 1, "type": "string"},
+          "ref": {"minLength": 1, "type": "string"},
+          "sensitivity_labels": {
+            "items": {"minLength": 1, "type": "string"},
+            "type": "array",
+            "uniqueItems": true
+          }
+        },
+        "required": ["ref", "purpose", "sensitivity_labels"],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "case_id": {"pattern": "^case_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "closure_disposition": {
+      "enum": ["completed", "decided", "no_decision", "deferred", "blocked", "abandoned", null],
+      "type": ["string", "null"]
+    },
+    "closure_reason": {"minLength": 1, "type": ["string", "null"]},
+    "continues_session_id": {
+      "pattern": "^session_[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+      "type": ["string", "null"]
+    },
+    "created_at": {"format": "date-time", "type": "string"},
+    "deliverable": {
+      "additionalProperties": false,
+      "properties": {
+        "audience": {"minLength": 1, "type": "string"},
+        "kind": {"minLength": 1, "type": "string"}
+      },
+      "required": ["kind", "audience"],
+      "type": "object"
+    },
+    "event_refs": {
+      "items": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+      "type": "array",
+      "uniqueItems": true
+    },
+    "evidence_refs": {
+      "items": {"pattern": "^evidence_sha256_[0-9a-f]{64}$", "type": "string"},
+      "type": "array",
+      "uniqueItems": true
+    },
+    "framework": {"additionalProperties": true, "type": ["object", "null"]},
+    "granted_permissions": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+    "interaction": {"type": ["object", "null"]},
+    "manifest_version": {"type": "integer"},
+    "normalized_problem": {
+      "additionalProperties": false,
+      "properties": {
+        "actor_id": {"minLength": 1, "type": "string"},
+        "statement": {"minLength": 1, "type": "string"}
+      },
+      "required": ["statement", "actor_id"],
+      "type": ["object", "null"]
+    },
+    "output_refs": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+    "primary_question": {"minLength": 1, "type": "string"},
+    "related_session_ids": {
+      "items": {"pattern": "^session_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+      "type": "array",
+      "uniqueItems": true
+    },
+    "requested_permissions": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+    "review_refs": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "selected_packages": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+          "package_id": {"minLength": 1, "type": "string"},
+          "package_type": {"enum": ["profile", "skill", "framework"], "type": "string"},
+          "rationale": {"minLength": 1, "type": "string"},
+          "version": {"minLength": 1, "type": "string"}
+        },
+        "required": ["package_type", "package_id", "version", "digest", "rationale"],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "sensitivity_labels": {
+      "items": {
+        "enum": ["none", "personal", "work", "hr", "political", "legal", "formal_eval", "irreversible"],
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "session_id": {"pattern": "^session_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "status": {
+      "enum": ["draft", "routed", "authorized", "active", "review_pending", "blocked", "closed", "abandoned"],
+      "type": "string"
+    },
+    "triage": {
+      "additionalProperties": false,
+      "properties": {
+        "clarification": {"additionalProperties": true, "type": "object"},
+        "config_sources": {"additionalProperties": true, "type": "object"},
+        "initialization": {"additionalProperties": true, "type": "object"},
+        "defaults": {"additionalProperties": true, "type": "object"},
+        "overrides": {"additionalProperties": true, "type": "object"},
+        "plan_id": {"pattern": "^triage_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+        "plan_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+        "plan_version": {"minLength": 1, "type": "string"},
+        "profile_match": {"additionalProperties": true, "type": ["object", "null"]},
+        "rejected_profiles": {"items": {"type": "string"}, "type": "array", "uniqueItems": true},
+        "route_type": {"enum": ["explicit_profile", "explicit_shortcut", "recognized_phrase", "inferred_profile", "dynamic"], "type": "string"},
+        "routing_event_id": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}
+      },
+      "required": ["plan_id", "plan_version", "route_type", "profile_match", "defaults", "overrides"],
+      "type": "object"
+    },
+    "updated_at": {"format": "date-time", "type": "string"}
+  },
+  "required": [
+    "schema_version",
+    "manifest_version",
+    "case_id",
+    "session_id",
+    "created_at",
+    "updated_at",
+    "status",
+    "primary_question",
+    "normalized_problem",
+    "deliverable",
+    "triage",
+    "selected_packages",
+    "framework",
+    "interaction",
+    "authorized_context",
+    "sensitivity_labels",
+    "requested_permissions",
+    "granted_permissions",
+    "evidence_refs",
+    "output_refs",
+    "review_refs",
+    "event_refs",
+    "related_session_ids",
+    "continues_session_id",
+    "closure_disposition",
+    "closure_reason"
+  ],
+  "type": "object"
+}

@@ -1,0 +1,17 @@
+{
+  "$id": "vault-next://schemas/v1/package-evaluation",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "adjudication": {"enum": ["pass", "fail"], "type": "string"},
+    "adjudicator_id": {"minLength": 1, "type": "string"},
+    "evaluated_at": {"format": "date-time", "type": "string"},
+    "evaluation_id": {"minLength": 1, "type": "string"},
+    "fixture_results": {"items": {"additionalProperties": false, "properties": {"fixture_id": {"minLength": 1, "type": "string"}, "passed": {"type": "boolean"}, "result_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"}}, "required": ["fixture_id", "passed", "result_sha256"], "type": "object"}, "minItems": 1, "type": "array"},
+    "package_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "suite_version": {"minLength": 1, "type": "string"}
+  },
+  "required": ["schema_version", "evaluation_id", "package_digest", "suite_version", "evaluated_at", "fixture_results", "adjudication", "adjudicator_id"],
+  "type": "object"
+}

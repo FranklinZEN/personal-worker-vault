@@ -1,0 +1,15 @@
+[project]
+name = "vault-next"
+version = "0.4.0"
+description = "Local-first, traceable personal reasoning and decision infrastructure"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[project.scripts]
+vault-next = "vault_next.cli:main"
+
+[tool.vault-next]
+schema-version = "1.0"
+supported-python = ">=3.12"
+runtime-dependencies = []

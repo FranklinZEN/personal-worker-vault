@@ -1,0 +1,8 @@
+{
+  "$id": "vault-next://schemas/v1/events/action-proposed",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {"summary": {"minLength": 1, "type": "string"}},
+  "required": ["summary"],
+  "type": "object"
+}

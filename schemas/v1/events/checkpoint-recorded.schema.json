@@ -1,0 +1,28 @@
+{
+  "$id": "vault-next://schemas/v1/events/checkpoint-recorded",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "checkpoint_id": {"pattern": "^checkpoint_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "contract_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "open_questions": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+    "source_event_ids": {
+      "items": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+      "type": "array",
+      "uniqueItems": true
+    },
+    "source_watermark": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "state": {"additionalProperties": true, "type": "object"},
+    "summary": {"minLength": 1, "type": "string"}
+  },
+  "required": [
+    "checkpoint_id",
+    "summary",
+    "state",
+    "open_questions",
+    "contract_sha256",
+    "source_event_ids",
+    "source_watermark"
+  ],
+  "type": "object"
+}

@@ -1,0 +1,1 @@
+{"$id":"vault-next://schemas/v1/events/question-clarified","$schema":"https://json-schema.org/draft/2020-12/schema","additionalProperties":false,"properties":{"question":{"minLength":1,"type":"string"},"reason":{"minLength":1,"type":"string"}},"required":["question"],"type":"object"}

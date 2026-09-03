@@ -1,0 +1,13 @@
+{
+  "$id": "vault-next://schemas/v1/events/interaction-started",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "contract": {"type": "object"},
+    "contract_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "plan_id": {"pattern": "^triage_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "plan_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+  },
+  "required": ["contract", "contract_sha256", "plan_id", "plan_sha256"],
+  "type": "object"
+}

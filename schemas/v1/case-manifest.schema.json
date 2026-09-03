@@ -1,0 +1,40 @@
+{
+  "$id": "vault-next://schemas/v1/case-manifest",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "access_policy": {"enum": ["owner_only", "explicit_session_allowlist"], "type": "string"},
+    "case_id": {"pattern": "^case_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "classification": {"additionalProperties": true, "type": "object"},
+    "created_at": {"format": "date-time", "type": "string"},
+    "provenance_refs": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+    "related_case_ids": {
+      "items": {"pattern": "^case_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+      "type": "array",
+      "uniqueItems": true
+    },
+    "schema_version": {"const": "1.0", "type": "string"},
+    "sensitivity_labels": {
+      "items": {
+        "enum": ["none", "personal", "work", "hr", "political", "legal", "formal_eval", "irreversible"],
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "title": {"minLength": 1, "type": "string"}
+  },
+  "required": [
+    "schema_version",
+    "case_id",
+    "title",
+    "created_at",
+    "sensitivity_labels",
+    "access_policy",
+    "classification",
+    "related_case_ids",
+    "provenance_refs"
+  ],
+  "type": "object"
+}

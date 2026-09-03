@@ -1,0 +1,56 @@
+{
+  "$id": "vault-next://schemas/v1/evidence-metadata",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "access_policy": {"enum": ["owner_only", "explicit_session_allowlist"], "type": "string"},
+    "actor": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {"minLength": 1, "type": "string"},
+        "type": {"enum": ["owner", "runtime"], "type": "string"}
+      },
+      "required": ["type", "id"],
+      "type": "object"
+    },
+    "byte_count": {"type": "integer"},
+    "capture_method": {"const": "synthetic_fixture", "type": "string"},
+    "captured_at": {"format": "date-time", "type": "string"},
+    "content_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "content_type": {"minLength": 1, "type": "string"},
+    "evidence_id": {"pattern": "^evidence_sha256_[0-9a-f]{64}$", "type": "string"},
+    "object_ref": {"pattern": "^sha256/[0-9a-f]{2}/[0-9a-f]{64}$", "type": "string"},
+    "original_display_name": {"minLength": 1, "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "sensitivity_labels": {
+      "items": {
+        "enum": ["none", "personal", "work", "hr", "political", "legal", "formal_eval", "irreversible"],
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "source_class": {"const": "synthetic_fixture", "type": "string"},
+    "source_event_time": {"format": "date-time", "type": ["string", "null"]},
+    "trust_classification": {"enum": ["untrusted_data", "owner_statement", "synthetic_observation"], "type": "string"}
+  },
+  "required": [
+    "schema_version",
+    "evidence_id",
+    "content_sha256",
+    "byte_count",
+    "content_type",
+    "source_class",
+    "original_display_name",
+    "captured_at",
+    "source_event_time",
+    "sensitivity_labels",
+    "access_policy",
+    "capture_method",
+    "trust_classification",
+    "actor",
+    "object_ref"
+  ],
+  "type": "object"
+}

@@ -1,0 +1,20 @@
+{
+  "$id": "vault-next://schemas/v1/package-lifecycle-event",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "actor": {"additionalProperties": false, "properties": {"id": {"minLength": 1, "type": "string"}, "type": {"enum": ["runtime", "reviewer", "owner", "policy"], "type": "string"}}, "required": ["type", "id"], "type": "object"},
+    "event_id": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "event_type": {"enum": ["package.proposed", "package.design_reviewed", "package.candidate_created", "package.evaluated", "package.reviewed", "package.owner_approved", "package.activated", "package.suspended", "package.deprecated"], "type": "string"},
+    "integrity": {"additionalProperties": false, "properties": {"event_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"}, "previous_event_sha256": {"pattern": "^(GENESIS|[0-9a-f]{64})$", "type": "string"}}, "required": ["previous_event_sha256", "event_sha256"], "type": "object"},
+    "package_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "package_id": {"minLength": 1, "type": "string"},
+    "package_type": {"enum": ["profile", "skill", "framework"], "type": "string"},
+    "payload": {"additionalProperties": true, "type": "object"},
+    "recorded_at": {"format": "date-time", "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "version": {"pattern": "^[0-9]+[.][0-9]+[.][0-9]+$", "type": "string"}
+  },
+  "required": ["schema_version", "event_id", "event_type", "recorded_at", "actor", "package_type", "package_id", "version", "package_digest", "payload", "integrity"],
+  "type": "object"
+}

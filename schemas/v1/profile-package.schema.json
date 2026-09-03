@@ -1,0 +1,55 @@
+{
+  "$id": "vault-next://schemas/v1/profile-package",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "change_class": {"enum": ["initial", "documentation", "presentation", "behavior", "permission", "contract", "baseline"], "type": "string"},
+    "change_summary": {"additionalProperties": false, "properties": {"behavioral_fields": {"items": {"type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true}, "rationale": {"minLength": 1, "type": "string"}}, "required": ["behavioral_fields", "rationale"], "type": "object"},
+    "supersedes_version": {"type": ["string", "null"]},
+    "affected_fixture_classes": {"items": {"enum": ["positive", "near_miss", "adversarial", "permission", "regression"], "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+    "rollback_plan": {"minLength": 1, "type": "string"},
+    "config": {
+      "additionalProperties": false,
+      "properties": {
+        "case_behavior": {"enum": ["none", "new_if_durable", "propose_existing", "continue_required"], "type": "string"},
+        "completion_checks": {"items": {"minLength": 1, "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+        "context_policy": {"minLength": 1, "type": "string"},
+        "defaults": {"additionalProperties": true, "type": "object"},
+        "family": {"minLength": 1, "type": "string"},
+        "framework_default": {"minLength": 1, "type": "string"},
+        "kind": {"enum": ["family", "named"], "type": "string"},
+        "near_miss_phrases": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+        "optional_inputs": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+        "output_contract": {"minLength": 1, "type": "string"},
+        "phrase_aliases": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+        "planning_checklist": {"items": {"minLength": 1, "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+        "required_inputs": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+        "review_profile": {"minLength": 1, "type": "string"},
+        "shortcuts": {"items": {"pattern": "^/[a-z0-9-]+$", "type": "string"}, "type": "array", "uniqueItems": true},
+        "skill_candidates": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+        "work_units": {"items": {"minLength": 1, "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true}
+      },
+      "required": ["kind", "family", "shortcuts", "phrase_aliases", "near_miss_phrases", "required_inputs", "optional_inputs", "defaults", "case_behavior", "planning_checklist", "work_units", "skill_candidates", "framework_default", "context_policy", "review_profile", "output_contract", "completion_checks"],
+      "type": "object"
+    },
+    "created_at": {"format": "date-time", "type": "string"},
+    "design_review": {
+      "additionalProperties": false,
+      "properties": {"outcome": {"const": "accepted", "type": "string"}, "rationale": {"minLength": 1, "type": "string"}, "reviewer_id": {"minLength": 1, "type": "string"}},
+      "required": ["reviewer_id", "outcome", "rationale"],
+      "type": "object"
+    },
+    "display_name": {"minLength": 1, "type": "string"},
+    "evaluation_fixture_refs": {"items": {"minLength": 1, "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+    "non_purpose": {"items": {"minLength": 1, "type": "string"}, "type": "array"},
+    "package_id": {"pattern": "^profile_[a-z0-9_]+$", "type": "string"},
+    "package_type": {"const": "profile", "type": "string"},
+    "prohibited_actions": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+    "purpose": {"minLength": 1, "type": "string"},
+    "requested_permissions": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "version": {"pattern": "^[0-9]+[.][0-9]+[.][0-9]+$", "type": "string"}
+  },
+  "required": ["schema_version", "package_type", "package_id", "version", "display_name", "purpose", "non_purpose", "requested_permissions", "prohibited_actions", "change_class", "change_summary", "supersedes_version", "affected_fixture_classes", "rollback_plan", "created_at", "design_review", "evaluation_fixture_refs", "config"],
+  "type": "object"
+}

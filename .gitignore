@@ -1,0 +1,63 @@
+__pycache__/
+*.py[cod]
+.coverage
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+.venv/
+.phase1-demo/
+.phase2-demo/
+.phase3-demo/
+.phase3a-demo/
+build/
+dist/
+*.egg-info/
+
+# Publication boundary: personal working material never belongs in this repository.
+# Keep any private notes, exports, or office files under one of these local-only roots.
+/private/
+/personal/
+/inbox/
+/working/
+
+# Office, PDF, spreadsheet, and other personal-source formats are excluded everywhere.
+*.doc
+*.docx
+*.ppt
+*.pptx
+*.pdf
+*.xls
+*.xlsx
+*.xlsm
+*.csv
+*.tsv
+
+# Root-level Markdown is private by default. README and reviewed project documentation are public.
+*.md
+!README.md
+!docs/
+!docs/**/*.md
+docs/private/
+docs/**/private/
+docs/**/personal/
+
+# The supplied handoff is owner context, not a publication artifact.
+/vault-next-handoff-2026-09-01.md
+
+# Local configuration and secrets are never versioned.
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Canonical runtime data is local and must never be committed accidentally.
+data/audit/
+data/artifacts/
+data/events/
+data/evidence/
+data/projections/
+data/quarantine/
+data/staging/

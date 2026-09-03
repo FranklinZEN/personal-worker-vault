@@ -1,0 +1,38 @@
+{
+  "$id": "vault-next://schemas/v1/events/interaction-mode-changed",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "added_skill_ids": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+    "context_revalidated": {"const": true, "type": "boolean"},
+    "explicit_confirmation": {"const": true, "type": "boolean"},
+    "new_contract": {"type": "object"},
+    "new_contract_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "new_plan_id": {"pattern": "^triage_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "new_plan_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "permissions_revalidated": {"const": true, "type": "boolean"},
+    "previous_contract": {"type": "object"},
+    "previous_contract_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "previous_plan_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "reason": {"minLength": 1, "type": "string"},
+    "revised_plan": {"type": "object"},
+    "removed_skill_ids": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true}
+  },
+  "required": [
+    "previous_contract",
+    "previous_contract_sha256",
+    "new_contract",
+    "new_contract_sha256",
+    "previous_plan_sha256",
+    "new_plan_id",
+    "new_plan_sha256",
+    "revised_plan",
+    "added_skill_ids",
+    "removed_skill_ids",
+    "context_revalidated",
+    "permissions_revalidated",
+    "reason",
+    "explicit_confirmation"
+  ],
+  "type": "object"
+}

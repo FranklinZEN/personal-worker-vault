@@ -1,0 +1,38 @@
+{
+  "$id": "vault-next://schemas/v1/policy-proposal",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "actor_id": {"minLength": 1, "type": "string"},
+    "approval_ref": {
+      "pattern": "^approval_[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+      "type": ["string", "null"]
+    },
+    "consequence_class": {"minLength": 1, "type": "string"},
+    "operation_class": {
+      "enum": ["read", "write", "promote", "execute", "transmit", "delete"],
+      "type": "string"
+    },
+    "proposal_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "sensitivity": {
+      "enum": ["none", "personal", "work", "hr", "political", "legal", "formal_eval", "irreversible"],
+      "type": "string"
+    },
+    "source_refs": {"items": {"minLength": 1, "type": "string"}, "type": "array"},
+    "targets": {"items": {"minLength": 1, "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true}
+  },
+  "required": [
+    "schema_version",
+    "operation_class",
+    "targets",
+    "consequence_class",
+    "actor_id",
+    "sensitivity",
+    "source_refs",
+    "approval_ref",
+    "proposal_digest"
+  ],
+  "title": "Vault Next policy proposal",
+  "type": "object"
+}

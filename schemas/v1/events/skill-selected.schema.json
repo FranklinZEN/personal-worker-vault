@@ -1,0 +1,1 @@
+{"$id":"vault-next://schemas/v1/events/skill-selected","$schema":"https://json-schema.org/draft/2020-12/schema","additionalProperties":false,"properties":{"package":{"type":"object"},"unique_work_units":{"items":{"type":"string"},"minItems":1,"type":"array","uniqueItems":true}},"required":["package","unique_work_units"],"type":"object"}

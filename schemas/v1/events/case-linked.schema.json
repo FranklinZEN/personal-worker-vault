@@ -1,0 +1,1 @@
+{"$id":"vault-next://schemas/v1/events/case-linked","$schema":"https://json-schema.org/draft/2020-12/schema","additionalProperties":false,"properties":{"related_case_id":{"pattern":"^case_[0-7][0-9A-HJKMNP-TV-Z]{25}$","type":"string"},"relation":{"minLength":1,"type":"string"}},"required":["related_case_id","relation"],"type":"object"}

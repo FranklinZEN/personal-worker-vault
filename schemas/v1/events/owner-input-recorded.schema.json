@@ -1,0 +1,13 @@
+{
+  "$id": "vault-next://schemas/v1/events/owner-input-recorded",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "explicit_confirmation": {"const": true, "type": "boolean"},
+    "input_id": {"pattern": "^owner_input_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "role": {"enum": ["evidence", "correction", "constraint", "preference", "direction"], "type": "string"},
+    "statement": {"minLength": 1, "type": "string"}
+  },
+  "required": ["input_id", "statement", "role", "explicit_confirmation"],
+  "type": "object"
+}

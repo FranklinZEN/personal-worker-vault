@@ -1,0 +1,91 @@
+{
+  "$id": "vault-next://schemas/v1/operational-audit",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "action_id": {
+      "pattern": "^action_[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+      "type": ["string", "null"]
+    },
+    "actor": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {"minLength": 1, "type": "string"},
+        "version": {"minLength": 1, "type": "string"}
+      },
+      "required": ["id", "version"],
+      "type": "object"
+    },
+    "attempt_status": {"enum": ["not_attempted", "attempted"], "type": "string"},
+    "attempted_at": {"format": "date-time", "type": "string"},
+    "case_id": {
+      "pattern": "^case_[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+      "type": ["string", "null"]
+    },
+    "error_code": {"minLength": 1, "type": ["string", "null"]},
+    "input_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "integrity": {
+      "additionalProperties": false,
+      "properties": {
+        "previous_record_sha256": {"pattern": "^(GENESIS|[0-9a-f]{64})$", "type": "string"},
+        "record_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+      },
+      "required": ["previous_record_sha256", "record_sha256"],
+      "type": "object"
+    },
+    "operation_class": {
+      "enum": ["read", "write", "promote", "execute", "transmit", "delete"],
+      "type": "string"
+    },
+    "operation_id": {
+      "pattern": "^operation_[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+      "type": "string"
+    },
+    "output_refs": {"items": {"minLength": 1, "type": "string"}, "type": "array"},
+    "policy": {
+      "additionalProperties": false,
+      "properties": {
+        "approval_ref": {
+          "pattern": "^approval_[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+          "type": ["string", "null"]
+        },
+        "reason_code": {"minLength": 1, "type": "string"},
+        "result": {"enum": ["allow", "deny", "requires_owner_approval"], "type": "string"}
+      },
+      "required": ["result", "reason_code", "approval_ref"],
+      "type": "object"
+    },
+    "result": {"enum": ["succeeded", "failed", "denied", "cancelled"], "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "semantic_event_refs": {
+      "items": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+      "type": "array"
+    },
+    "session_id": {
+      "pattern": "^session_[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+      "type": ["string", "null"]
+    },
+    "target_summary": {"minLength": 1, "type": "string"}
+  },
+  "required": [
+    "schema_version",
+    "operation_id",
+    "attempted_at",
+    "actor",
+    "case_id",
+    "session_id",
+    "action_id",
+    "semantic_event_refs",
+    "operation_class",
+    "target_summary",
+    "input_digest",
+    "policy",
+    "attempt_status",
+    "result",
+    "output_refs",
+    "error_code",
+    "integrity"
+  ],
+  "title": "Vault Next operational audit record",
+  "type": "object"
+}

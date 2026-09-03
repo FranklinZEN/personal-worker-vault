@@ -1,0 +1,32 @@
+{
+  "$id": "vault-next://schemas/v1/context-provenance-report",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "case_id": {"pattern": "^case_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "loaded_refs": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+    "manifest_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "manifest_version": {"type": "integer"},
+    "rejected_refs": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "sensitivity_labels": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+    "session_id": {"pattern": "^session_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "source_event_ids": {
+      "items": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+      "type": "array",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "schema_version",
+    "case_id",
+    "session_id",
+    "manifest_version",
+    "manifest_sha256",
+    "loaded_refs",
+    "rejected_refs",
+    "sensitivity_labels",
+    "source_event_ids"
+  ],
+  "type": "object"
+}

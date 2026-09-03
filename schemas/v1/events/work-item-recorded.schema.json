@@ -1,0 +1,28 @@
+{
+  "$id": "vault-next://schemas/v1/events/work-item-recorded",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "blocker": {"type": ["string", "null"]},
+    "due_on": {"pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$", "type": ["string", "null"]},
+    "explicit_confirmation": {"type": "boolean"},
+    "next_review_on": {"pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$", "type": ["string", "null"]},
+    "priority": {"enum": ["low", "normal", "high", null], "type": ["string", "null"]},
+    "source_kind": {"enum": ["system_suggestion", "owner_instruction"], "type": "string"},
+    "statement": {"minLength": 1, "type": "string"},
+    "status": {"enum": ["proposed", "open"], "type": "string"},
+    "work_item_id": {"pattern": "^work_item_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}
+  },
+  "required": [
+    "work_item_id",
+    "statement",
+    "status",
+    "source_kind",
+    "priority",
+    "due_on",
+    "next_review_on",
+    "blocker",
+    "explicit_confirmation"
+  ],
+  "type": "object"
+}

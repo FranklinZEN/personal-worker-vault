@@ -1,0 +1,29 @@
+{
+  "$id": "vault-next://schemas/v1/approval",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "approval_id": {"pattern": "^approval_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "consequence_class": {"minLength": 1, "type": "string"},
+    "expires_at": {"format": "date-time", "type": ["string", "null"]},
+    "granted_at": {"format": "date-time", "type": "string"},
+    "owner_actor_id": {"minLength": 1, "type": "string"},
+    "proposal_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "revoked": {"type": "boolean"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "targets": {"items": {"minLength": 1, "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true}
+  },
+  "required": [
+    "schema_version",
+    "approval_id",
+    "proposal_digest",
+    "targets",
+    "consequence_class",
+    "granted_at",
+    "expires_at",
+    "revoked",
+    "owner_actor_id"
+  ],
+  "title": "Vault Next exact-scope approval",
+  "type": "object"
+}

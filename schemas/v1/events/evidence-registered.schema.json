@@ -1,0 +1,1 @@
+{"$id":"vault-next://schemas/v1/events/evidence-registered","$schema":"https://json-schema.org/draft/2020-12/schema","additionalProperties":false,"properties":{"metadata":{"additionalProperties":true,"type":"object"},"metadata_sha256":{"pattern":"^[0-9a-f]{64}$","type":"string"}},"required":["metadata","metadata_sha256"],"type":"object"}

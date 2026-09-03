@@ -1,0 +1,12 @@
+{
+  "$id": "vault-next://schemas/v1/events/session-started",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "manifest": {"additionalProperties": true, "type": "object"},
+    "previous_manifest_sha256": {"pattern": "^[0-9a-f]{64}$", "type": ["string", "null"]},
+    "manifest_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+  },
+  "required": ["manifest_sha256"],
+  "type": "object"
+}

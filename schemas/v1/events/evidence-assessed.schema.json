@@ -1,0 +1,1 @@
+{"$id":"vault-next://schemas/v1/events/evidence-assessed","$schema":"https://json-schema.org/draft/2020-12/schema","additionalProperties":false,"properties":{"assessment":{"minLength":1,"type":"string"},"evidence_id":{"pattern":"^evidence_sha256_[0-9a-f]{64}$","type":"string"}},"required":["evidence_id","assessment"],"type":"object"}

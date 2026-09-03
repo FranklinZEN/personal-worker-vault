@@ -1,0 +1,7 @@
+{
+  "audience": "Phase 1 test harness",
+  "expected_disposition": "no_decision",
+  "primary_question": "Which reversible synthetic option best proves the Phase 1 kernel?",
+  "sensitivity": "none",
+  "source_class": "invented_fixture"
+}

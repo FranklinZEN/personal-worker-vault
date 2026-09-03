@@ -1,0 +1,1 @@
+{"$id":"vault-next://schemas/v1/events/framework-stage-recorded","$schema":"https://json-schema.org/draft/2020-12/schema","additionalProperties":false,"properties":{"framework_id":{"minLength":1,"type":"string"},"sequence":{"type":"integer"},"stage":{"minLength":1,"type":"string"}},"required":["framework_id","stage","sequence"],"type":"object"}

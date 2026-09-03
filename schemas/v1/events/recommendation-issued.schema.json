@@ -1,0 +1,13 @@
+{
+  "$id": "vault-next://schemas/v1/events/recommendation-issued",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "recommendation_id": {"minLength": 1, "type": "string"},
+    "revision": {"type": "integer"},
+    "owner_authored": {"type": "boolean"},
+    "summary": {"minLength": 1, "type": "string"}
+  },
+  "required": ["summary"],
+  "type": "object"
+}

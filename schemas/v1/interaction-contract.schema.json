@@ -1,0 +1,56 @@
+{
+  "$id": "vault-next://schemas/v1/interaction-contract",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "allowed_mode_transitions": {
+      "items": {
+        "enum": ["explore", "co_develop", "artifact_iterate", "rehearse", "status_review"],
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "artifact_policy": {
+      "enum": ["none", "optional", "iterative", "required"],
+      "type": "string"
+    },
+    "checkpoint_policy": {
+      "enum": ["material_change", "owner_request", "before_close"],
+      "type": "string"
+    },
+    "completion_requires": {
+      "items": {
+        "enum": ["owner_checkpoint", "artifact_acceptance", "explicit_decision", "status_review_complete"],
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "initiative": {"enum": ["owner_led", "mixed"], "type": "string"},
+    "mode": {
+      "enum": ["explore", "co_develop", "artifact_iterate", "rehearse", "status_review"],
+      "type": "string"
+    },
+    "mode_source": {
+      "enum": ["owner_instruction", "named_profile", "family_profile", "safe_inference", "owner_default"],
+      "type": "string"
+    },
+    "owner_can_change_mode": {"const": true, "type": "boolean"},
+    "rationale": {"minLength": 1, "type": "string"}
+  },
+  "required": [
+    "mode",
+    "mode_source",
+    "rationale",
+    "owner_can_change_mode",
+    "initiative",
+    "artifact_policy",
+    "checkpoint_policy",
+    "completion_requires",
+    "allowed_mode_transitions"
+  ],
+  "type": "object"
+}

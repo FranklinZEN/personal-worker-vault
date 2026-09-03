@@ -1,0 +1,19 @@
+{
+  "$id": "vault-next://schemas/v1/events/session-closed",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "from_status": {"minLength": 1, "type": "string"},
+    "to_status": {"enum": ["closed", "abandoned"], "type": "string"},
+    "frozen_manifest": {"additionalProperties": true, "type": "object"},
+    "frozen_manifest_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "previous_manifest_sha256": {"pattern": "^[0-9a-f]{64}$", "type": ["string", "null"]},
+    "disposition": {
+      "enum": ["completed", "decided", "no_decision", "deferred", "abandoned", "blocked"],
+      "type": "string"
+    },
+    "reason": {"minLength": 1, "type": "string"}
+  },
+  "required": ["disposition"],
+  "type": "object"
+}

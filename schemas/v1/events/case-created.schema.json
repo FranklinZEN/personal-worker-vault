@@ -1,0 +1,13 @@
+{
+  "$id": "vault-next://schemas/v1/events/case-created",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "manifest": {"additionalProperties": true, "type": "object"},
+    "manifest_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "sensitivity": {"minLength": 1, "type": "string"},
+    "title": {"minLength": 1, "type": "string"}
+  },
+  "required": ["title"],
+  "type": "object"
+}
