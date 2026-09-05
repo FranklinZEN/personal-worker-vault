@@ -10,8 +10,8 @@ source of truth.
 
 ## Current phase
 
-**P3A interaction-first contracts are implemented with synthetic fixtures; evidence awaits owner
-review.**
+**P5 semantic-review and evaluation foundations are implemented with synthetic fixtures; evidence
+awaits owner review.**
 
 Phase 0 established the product, architecture, data model, migration strategy, acceptance tests,
 roadmap, and proposed governance. The owner then authorized the narrow Phase 1 foundation build.
@@ -21,9 +21,10 @@ in [`docs/PHASE-1-EVIDENCE.md`](docs/PHASE-1-EVIDENCE.md).
 The owner approved the Phase 1 and Phase 2 evidence and authorized synthetic-only Phase 3 work. The
 Phase 3 technical evidence passes for that scope. A later product review identified a cross-cutting
 requirement for live exploration, iterative artifact review, and current-work dialogue. The owner
-approved that design and authorized synthetic-only P3A, which is now implemented. Phase 4 is not
-authorized. The draft governance remains inactive, and no personal content has been accessed or
-migrated.
+approved that design and authorized synthetic-only P3A. The owner subsequently approved the combined
+Phase 3/P3A evidence, authorized synthetic-only Phase 4, and approved its evidence. Synthetic-only
+Phase 5 is now implemented and awaits evidence review. The draft governance remains inactive, and no
+personal content has been accessed or migrated.
 
 ## What the system must preserve
 
@@ -77,14 +78,17 @@ gaining authority to decide or act.
 
 | Path | Purpose | Status |
 |---|---|---|
-| `src/vault_next/` | Phase 1–3/P3A kernel, lifecycle, routing, interaction, artifact, and work-state logic | Implemented |
-| `schemas/v1/` | Versioned envelope, event payload, policy, manifest, triage, interaction, artifact, and projection schemas | Implemented |
+| `src/vault_next/` | Phase 1–5 kernel, lifecycle, routing, interaction, artifact, work-state, outcome, projection, review, and evaluation logic | Implemented |
+| `schemas/v1/` | Versioned envelope, event payload, policy, manifest, triage, interaction, artifact, outcome, and projection schemas | Implemented |
 | `tests/` | Unit, property-style, concurrency, integration, and acceptance checks | Passing |
 | `fixtures/synthetic/` | Invented non-personal test inputs | Implemented |
 | `docs/PHASE-1-EVIDENCE.md` | Verification results, fixture hashes, limits, and gate status | Current |
 | `docs/PHASE-2-EVIDENCE.md` | Approved Phase 2 gate results and deterministic hashes | Approved |
-| `docs/PHASE-3-EVIDENCE.md` | Phase 3 original-scope gate results, hashes, and interaction amendment record | Technical pass; review with P3A |
-| `docs/PHASE-3A-EVIDENCE.md` | P3A interaction, artifact, work-item, regression, and hash evidence | Awaiting owner review |
+| `docs/PHASE-3-EVIDENCE.md` | Phase 3 original-scope gate results, hashes, and interaction amendment record | Approved with P3A |
+| `docs/PHASE-3A-EVIDENCE.md` | P3A interaction, artifact, work-item, regression, and hash evidence | Approved with Phase 3 |
+| `docs/PHASE-4-EVIDENCE.md` | Decision, case, artifact, current-work, integrity, and hash evidence | Approved |
+| `docs/PHASE-5-EVIDENCE.md` | Semantic-review, evaluation, integrity, and hash evidence | Awaiting owner review |
+| `docs/REDACTION-PROTOCOL-v1.md` | Candidate redaction procedure; inactive pending separate authorization | Candidate only |
 | `README.md` | Purpose, boundaries, phase, and document map | Current |
 | `docs/PRODUCT-STRATEGY.md` | Product problem, scope, principles, and success measures | Drafted |
 | `docs/TARGET-ARCHITECTURE.md` | Architecture candidates, recommendation, boundaries, and data flow | Drafted |
@@ -94,7 +98,7 @@ gaining authority to decide or act.
 | `docs/DECISION-AND-CASE-MODEL.md` | Canonical concepts, event semantics, provenance, and projections | Drafted |
 | `docs/MIGRATION-PLAN.md` | Repeatable read-only discovery, dry run, validation, cutover, and rollback | Drafted |
 | `docs/ACCEPTANCE-TESTS.md` | Observable end-to-end and safety acceptance scenarios | Drafted |
-| `docs/IMPLEMENTATION-ROADMAP.md` | Milestones, dependencies, gates, risks, and authorization records | Current through P3A |
+| `docs/IMPLEMENTATION-ROADMAP.md` | Milestones, dependencies, gates, risks, and authorization records | Current through P5 |
 | `docs/decisions/ADR-0001-vault-next-foundation.md` | Foundational repository and runtime direction | Accepted from handoff |
 | `docs/decisions/ADR-0002-universal-triage-and-use-case-profiles.md` | Hybrid triage/profile/dynamic-routing decision | Accepted 2026-09-01 |
 | `docs/decisions/ADR-0003-use-ulids-for-canonical-identifiers.md` | Canonical identifier decision | Accepted for Phase 1 |
@@ -103,6 +107,7 @@ gaining authority to decide or act.
 | `docs/decisions/ADR-0006-use-event-embedded-manifests-and-explicit-context-authorization.md` | Phase 2 lifecycle and context decision | Accepted for Phase 2 |
 | `docs/decisions/ADR-0007-use-immutable-package-registry-and-deterministic-composer.md` | Phase 3 package governance and composition decision | Accepted for Phase 3 |
 | `docs/decisions/ADR-0008-interaction-modes-working-artifacts-and-work-items.md` | Interaction, artifact, and current-work architecture decision | Accepted 2026-09-03 |
+| `docs/decisions/ADR-0009-tool-less-semantic-review-and-explicit-evaluation-baselines.md` | P5 reviewer authority, reviewed-hash, sensitivity, retry, waiver, and baseline decision | Evidence pending owner review |
 | `docs/governance/AGENTS-v2-DRAFT.md` | Proposed operating rules; not active governance | Awaiting owner approval |
 | `vault-next-handoff-2026-09-01.md` | Source charter supplied by the owner | Reference input |
 
@@ -146,6 +151,20 @@ make demo-phase3a PYTHON=python3
 PYTHONPATH=src python3 -m vault_next --root .phase3a-demo validate
 ```
 
+The deterministic P4 generated-projection proof is isolated as well:
+
+```sh
+make demo-phase4 PYTHON=python3
+PYTHONPATH=src python3 -m vault_next --root .phase4-demo validate
+```
+
+The deterministic P5 review/evaluation proof is isolated as well:
+
+```sh
+make demo-phase5 PYTHON=python3
+PYTHONPATH=src python3 -m vault_next --root .phase5-demo validate
+```
+
 `make typecheck` is a dependency-free compile, schema-load, and public-annotation check; it is not a
 replacement for a mature static analyzer. Generated local data must not be committed or edited by
 hand.
@@ -176,11 +195,16 @@ Review the documents in this order:
 4. Profile and skill lifecycle: confirm named shortcut behavior and dedicated change governance.
 5. Interaction-first work model and ADR-0008: confirm modes, checkpoints, artifact acceptance,
    work-item authority, and P3A.
-6. Decision and case model: confirm human authority, event semantics, and projections.
-7. Acceptance tests: confirm that the important promises are objectively testable.
-8. Migration plan: confirm category mappings and content exclusions.
-9. Implementation roadmap: inspect implemented boundaries, the P3A evidence gate, and later phases.
-10. Governance draft: approve only after the preceding choices are settled.
+6. Phase 4 evidence: review generated decision/case/artifact/current-work views and their integrity
+   controls.
+7. Phase 5 evidence and ADR-0009: review reviewer authority, packet sensitivity, retry/waiver,
+   exact-hash gates, and evaluation baselines.
+8. Candidate redaction protocol: approve only with a separately named future source/purpose scope.
+9. Decision and case model: confirm human authority, event semantics, and projections.
+10. Acceptance tests: confirm that the important promises are objectively testable.
+11. Migration plan: confirm category mappings and content exclusions.
+12. Implementation roadmap: inspect implemented boundaries, the P5 evidence gate, and later phases.
+13. Governance draft: approve only after the preceding choices are settled.
 
 ## Explicit current non-deliverables
 

@@ -9,6 +9,8 @@ __pycache__/
 .phase2-demo/
 .phase3-demo/
 .phase3a-demo/
+.phase4-demo/
+.phase5-demo/
 build/
 dist/
 *.egg-info/
@@ -58,6 +60,8 @@ data/audit/
 data/artifacts/
 data/events/
 data/evidence/
+data/evaluations/
 data/projections/
 data/quarantine/
+data/reviews/
 data/staging/

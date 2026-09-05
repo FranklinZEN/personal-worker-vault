@@ -1,6 +1,6 @@
 # Vault Next Phase 3A Evidence
 
-Status: Technical gate passes; awaiting owner review
+Status: Owner approved together with Phase 3; P4 subsequently authorized
 Evidence date: 2026-09-03
 Scope: Exact roadmap P3A scope, synthetic fixtures only
 
@@ -12,7 +12,9 @@ checkpoints, governed mode-change recomposition, immutable content-addressed art
 exact-version feedback and owner acceptance, and repository-local work items whose commitment and
 status remain under explicit owner authority.
 
-This evidence requests owner review. It does not authorize P4.
+The repository owner approved this evidence together with the Phase 3 evidence on 2026-09-04. P4
+then received its own separate exact-scope authorization; this evidence does not authorize any later
+phase.
 
 ## Authorized boundary observed
 
@@ -23,7 +25,8 @@ This evidence requests owner review. It does not authorize P4.
 - No personal profile, skill, case, artifact, or task was created or activated.
 - No model call, remote, connector, scheduler, adapter, background worker, or external transmission
   was used.
-- The governance draft remains inactive, and P4 projections were not started.
+- The governance draft remains inactive. P4 was separately authorized later and is evidenced in
+  `docs/PHASE-4-EVIDENCE.md`.
 
 ## Delivered contracts and behavior
 
@@ -111,9 +114,9 @@ The generated fixture independently validates with zero findings and exactly two
 
 ## Known limits and next decision
 
-P3A provides contracts, deterministic folds/read models, and JSON session traces. It intentionally
-does not provide P4's finished decision memo, case journal, artifact-history page, or human-readable
-“today” view. It uses deterministic synthetic contributions rather than model execution. Actual
+P3A provides contracts, deterministic folds/read models, and JSON session traces. The later P4
+milestone separately adds decision memo, case journal, artifact-history, and human-readable “today”
+views. P3A uses deterministic synthetic contributions rather than model execution. Actual
 personal profiles, personal content, platform adapters, external task/calendar synchronization,
 proactive reminders, migration, and background operation remain out of scope.
 
@@ -122,5 +125,5 @@ session-manifest snapshot. If that second append suffers an I/O failure, the art
 remain valid and discoverable while the manifest reference requires a later repair; no accepted or
 owner-decision state is fabricated.
 
-The next decision is whether to approve the combined Phase 3 and P3A evidence. P4 remains
-unauthorized and requires a separate exact-scope authorization after that review.
+The combined Phase 3/P3A evidence was approved on 2026-09-04. P4 was separately approved and P5
+was then separately authorized; the active evidence decision is P5, while P5A remains unauthorized.

@@ -1,0 +1,19 @@
+{
+  "$id": "vault-next://schemas/v1/review-waiver",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "explicit_confirmation": {"const": true, "type": "boolean"},
+    "finding_ids": {"items": {"minLength": 1, "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+    "owner_id": {"minLength": 1, "type": "string"},
+    "reason": {"minLength": 1, "type": "string"},
+    "result_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "review_id": {"pattern": "^review_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "target_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "waived_at": {"format": "date-time", "type": "string"},
+    "waiver_id": {"minLength": 1, "type": "string"}
+  },
+  "required": ["schema_version", "waiver_id", "review_id", "target_sha256", "result_sha256", "finding_ids", "owner_id", "reason", "explicit_confirmation", "waived_at"],
+  "type": "object"
+}

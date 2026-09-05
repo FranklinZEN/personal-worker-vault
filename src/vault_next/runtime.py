@@ -226,6 +226,7 @@ class CaseSessionRuntime:
 
     def close_session(self, session_id: str, *, disposition: str, reason: str) -> dict[str, Any]:
         state = self._session(session_id)
+        self._require_semantic_review_clearance(session_id)
         target = "abandoned" if disposition == "abandoned" else "closed"
         if target not in SESSION_TRANSITIONS.get(state.status, ()):
             raise self._transition_error("session", state.status, target)
@@ -318,6 +319,7 @@ class CaseSessionRuntime:
             "artifact.withdrawn",
             "work_item.recorded",
             "work_item.status_changed",
+            "outcome.assessed",
         }
         if event_type not in allowed:
             raise ValidationError(
@@ -353,6 +355,7 @@ class CaseSessionRuntime:
 
     def record_owner_decision(self, session_id: str, decision: str) -> dict[str, Any]:
         state = self._session(session_id)
+        self._require_semantic_review_clearance(session_id)
         decision_id = self.ids.new("decision")
         return self._append(
             "owner_decision.recorded",
@@ -360,6 +363,101 @@ class CaseSessionRuntime:
             session_id,
             {"decision_id": decision_id, "decision": decision, "explicit_confirmation": True},
             subject_refs=[decision_id],
+            causation=self._last_session_event_id(session_id),
+            actor={"type": "owner", "id": "owner"},
+        )
+
+    def request_semantic_review(
+        self,
+        session_id: str,
+        *,
+        review_id: str,
+        packet_sha256: str,
+        target_type: str,
+        target_ref: str,
+        target_sha256: str,
+    ) -> dict[str, Any]:
+        """Bind a required semantic review to one exact immutable target before finalization."""
+
+        state = self._session(session_id)
+        if state.status != "active":
+            raise self._transition_error("session", state.status, "review_pending")
+        requested = self._append(
+            "review.requested",
+            state.case_id,
+            session_id,
+            {
+                "review_id": review_id,
+                "packet_sha256": packet_sha256,
+                "target_type": target_type,
+                "target_ref": target_ref,
+                "target_sha256": target_sha256,
+                "requires_semantic_review": True,
+            },
+            subject_refs=[review_id, target_ref],
+            causation=self._last_session_event_id(session_id),
+        )
+        self.transition_session(session_id, "review_pending", reason="semantic review requested")
+        return requested
+
+    def record_semantic_review_completion(
+        self,
+        session_id: str,
+        *,
+        review_id: str,
+        attempt: int,
+        packet_sha256: str,
+        result_sha256: str,
+        target_sha256: str,
+        status: str,
+    ) -> dict[str, Any]:
+        """Record a coordinator-attributed result; the reviewer itself never writes state."""
+
+        state = self._session(session_id)
+        if state.status not in {"review_pending", "blocked"}:
+            raise self._transition_error("session", state.status, state.status)
+        return self._append(
+            "review.completed",
+            state.case_id,
+            session_id,
+            {
+                "review_id": review_id,
+                "attempt": attempt,
+                "packet_sha256": packet_sha256,
+                "result_sha256": result_sha256,
+                "target_sha256": target_sha256,
+                "status": status,
+            },
+            subject_refs=[review_id],
+            causation=self._last_session_event_id(session_id),
+        )
+
+    def waive_semantic_review(
+        self,
+        session_id: str,
+        *,
+        waiver_id: str,
+        review_id: str,
+        target_sha256: str,
+        result_sha256: str,
+        finding_ids: list[str],
+    ) -> dict[str, Any]:
+        """Record only an explicit owner waiver for the exact reviewed target/result."""
+
+        state = self._session(session_id)
+        return self._append(
+            "review.waived",
+            state.case_id,
+            session_id,
+            {
+                "waiver_id": waiver_id,
+                "review_id": review_id,
+                "target_sha256": target_sha256,
+                "result_sha256": result_sha256,
+                "finding_ids": list(dict.fromkeys(finding_ids)),
+                "explicit_confirmation": True,
+            },
+            subject_refs=[review_id, waiver_id],
             causation=self._last_session_event_id(session_id),
             actor={"type": "owner", "id": "owner"},
         )
@@ -413,6 +511,45 @@ class CaseSessionRuntime:
             provenance=[{"ref": decision_id, "relation": "supersedes"}],
         )
 
+    def record_outcome_assessment(
+        self,
+        session_id: str,
+        decision_id: str,
+        *,
+        observed_outcome: str,
+        result_quality: str,
+        process_quality: str,
+        prediction_assessment: str,
+        competing_explanation: str,
+        attribution_confidence: str,
+        matured_at: str,
+        evidence_refs: list[str],
+    ) -> dict[str, Any]:
+        """Record an explicit owner assessment without altering the original decision."""
+
+        state = self._session(session_id)
+        return self._append(
+            "outcome.assessed",
+            state.case_id,
+            session_id,
+            {
+                "decision_id": decision_id,
+                "observed_outcome": observed_outcome,
+                "result_quality": result_quality,
+                "process_quality": process_quality,
+                "prediction_assessment": prediction_assessment,
+                "competing_explanation": competing_explanation,
+                "attribution_confidence": attribution_confidence,
+                "matured_at": matured_at,
+                "evidence_refs": list(dict.fromkeys(evidence_refs)),
+                "explicit_confirmation": True,
+            },
+            subject_refs=[decision_id, *list(dict.fromkeys(evidence_refs))],
+            causation=self._last_session_event_id(session_id),
+            actor={"type": "owner", "id": "owner"},
+            provenance=[{"ref": decision_id, "relation": "responds_to"}],
+        )
+
     def _session(self, session_id: str):
         states, issues = fold_session_states(self.semantic.read_all())
         if issues:
@@ -428,6 +565,22 @@ class CaseSessionRuntime:
                 ]
             )
         return states[session_id]
+
+    def _require_semantic_review_clearance(self, session_id: str) -> None:
+        """Reject final owner decisions while a requested review lacks pass or owner waiver."""
+
+        unresolved = _unresolved_semantic_reviews(self.semantic.read_all(), session_id)
+        if unresolved:
+            raise ValidationError(
+                [
+                    Issue(
+                        ErrorCode.REVIEW_REQUIRED_UNRESOLVED,
+                        "$review",
+                        "required semantic review is not passed or explicitly waived: "
+                        + ", ".join(unresolved),
+                    )
+                ]
+            )
 
     def _next_manifest(self, state: Any, **changes: Any) -> dict[str, Any]:
         if state.manifest is None:
@@ -545,3 +698,38 @@ class CaseSessionRuntime:
                 )
             ]
         )
+
+
+def _unresolved_semantic_reviews(events: list[dict[str, Any]], session_id: str) -> list[str]:
+    """Return review IDs whose latest exact result is neither pass nor owner-waived."""
+
+    requests = [
+        event
+        for event in events
+        if event.get("session_id") == session_id and event["event_type"] == "review.requested"
+    ]
+    unresolved: list[str] = []
+    for request in requests:
+        payload = request["payload"]
+        review_id = payload["review_id"]
+        target_sha256 = payload["target_sha256"]
+        completions = [
+            event
+            for event in events
+            if event.get("session_id") == session_id
+            and event["event_type"] == "review.completed"
+            and event["payload"].get("review_id") == review_id
+            and event["payload"].get("target_sha256") == target_sha256
+        ]
+        waivers = [
+            event
+            for event in events
+            if event.get("session_id") == session_id
+            and event["event_type"] == "review.waived"
+            and event["payload"].get("review_id") == review_id
+            and event["payload"].get("target_sha256") == target_sha256
+        ]
+        if (completions and completions[-1]["payload"].get("status") == "pass") or waivers:
+            continue
+        unresolved.append(review_id)
+    return unresolved

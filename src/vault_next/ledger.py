@@ -1399,6 +1399,87 @@ class SemanticLedger(HashChainedLedger):
         event_type = record["event_type"]
         actor_type = record["actor"]["type"]
         payload = record["payload"]
+        if event_type in {"owner_decision.recorded", "session.closed"}:
+            issues.extend(_semantic_review_gate_issues(record, previous_records))
+        if event_type == "review.requested":
+            target = _review_target_from_events(
+                previous_records,
+                record["session_id"],
+                payload.get("target_type"),
+                payload.get("target_ref"),
+            )
+            if actor_type != "runtime":
+                issues.append(
+                    Issue(
+                        ErrorCode.ACTOR_AUTHORITY_INVALID,
+                        "$actor",
+                        "semantic review request is coordinator-attributed, not reviewer-attributed",
+                    )
+                )
+            if target is None or target != payload.get("target_sha256"):
+                issues.append(
+                    Issue(
+                        ErrorCode.REVIEW_TARGET_STALE,
+                        "$payload/target_sha256",
+                        "review request must bind an existing exact session target",
+                    )
+                )
+        if event_type == "review.completed":
+            request = next(
+                (
+                    item
+                    for item in reversed(previous_records)
+                    if item["event_type"] == "review.requested"
+                    and item["session_id"] == record["session_id"]
+                    and item["payload"].get("review_id") == payload.get("review_id")
+                ),
+                None,
+            )
+            if actor_type != "runtime":
+                issues.append(
+                    Issue(
+                        ErrorCode.ACTOR_AUTHORITY_INVALID,
+                        "$actor",
+                        "semantic review completion is coordinator-attributed, not reviewer-attributed",
+                    )
+                )
+            if request is None or any(
+                request["payload"].get(key) != payload.get(key)
+                for key in ("packet_sha256", "target_sha256")
+            ):
+                issues.append(
+                    Issue(
+                        ErrorCode.REVIEW_RESULT_INVALID,
+                        "$payload",
+                        "review completion must bind the prior exact request",
+                    )
+                )
+        if event_type == "review.waived":
+            completion = next(
+                (
+                    item
+                    for item in reversed(previous_records)
+                    if item["event_type"] == "review.completed"
+                    and item["session_id"] == record["session_id"]
+                    and item["payload"].get("review_id") == payload.get("review_id")
+                    and item["payload"].get("target_sha256") == payload.get("target_sha256")
+                    and item["payload"].get("result_sha256") == payload.get("result_sha256")
+                ),
+                None,
+            )
+            if (
+                actor_type != "owner"
+                or payload.get("explicit_confirmation") is not True
+                or completion is None
+                or completion["payload"].get("status") != "findings"
+            ):
+                issues.append(
+                    Issue(
+                        ErrorCode.ACTOR_AUTHORITY_INVALID,
+                        "$payload",
+                        "review waiver requires explicit owner confirmation of an exact finding result",
+                    )
+                )
         if event_type in {
             "owner_decision.recorded",
             "owner_decision.revised",
@@ -1534,6 +1615,44 @@ class SemanticLedger(HashChainedLedger):
                         "correction must reference a prior event with corrects provenance",
                     )
                 )
+        if event_type == "outcome.assessed":
+            decision_id = payload.get("decision_id")
+            decision_events = [
+                item
+                for item in previous_records
+                if item["event_type"] == "owner_decision.recorded"
+                and decision_id in item["subject_refs"]
+            ]
+            evidence_ids = {
+                item["payload"]["metadata"]["evidence_id"]
+                for item in previous_records
+                if item["event_type"] == "evidence.registered"
+            }
+            if actor_type != "owner":
+                issues.append(
+                    Issue(
+                        ErrorCode.ACTOR_AUTHORITY_INVALID,
+                        "$actor",
+                        "outcome assessment requires explicit owner attribution",
+                    )
+                )
+            if not any(item["case_id"] == record["case_id"] for item in decision_events):
+                issues.append(
+                    Issue(
+                        ErrorCode.EVENT_REFERENCE_MISSING,
+                        "$payload/decision_id",
+                        "outcome assessment must reference a prior decision in the same case",
+                    )
+                )
+            missing_evidence = sorted(set(payload.get("evidence_refs", [])) - evidence_ids)
+            if missing_evidence:
+                issues.append(
+                    Issue(
+                        ErrorCode.EVENT_REFERENCE_MISSING,
+                        "$payload/evidence_refs",
+                        "outcome assessment references unregistered evidence",
+                    )
+                )
         if event_type == "session.closed":
             disposition = payload.get("disposition")
             allowed = {"completed", "decided", "no_decision", "deferred", "abandoned", "blocked"}
@@ -1606,6 +1725,82 @@ def _source_watermark_issues(
             )
         )
     return issues
+
+
+def _review_target_from_events(
+    events: list[dict[str, Any]], session_id: str | None, target_type: str | None, target_ref: str | None
+) -> str | None:
+    """Return the exact target digest that a review request is permitted to bind."""
+
+    for event in reversed(events):
+        if event.get("session_id") != session_id:
+            continue
+        payload = event["payload"]
+        if (
+            target_type == "recommendation"
+            and event["event_type"] in {"recommendation.issued", "recommendation.revised"}
+            and payload.get("recommendation_id") == target_ref
+        ):
+            return event["integrity"]["event_sha256"]
+        if (
+            target_type == "checkpoint"
+            and event["event_type"] == "checkpoint.recorded"
+            and payload.get("checkpoint_id") == target_ref
+        ):
+            return event["integrity"]["event_sha256"]
+        if (
+            target_type == "artifact_version"
+            and event["event_type"] == "artifact.version_created"
+            and payload.get("version", {}).get("version_id") == target_ref
+        ):
+            return payload["version"].get("content_sha256")
+    return None
+
+
+def _semantic_review_gate_issues(
+    record: dict[str, Any], previous_records: list[dict[str, Any]]
+) -> list[Issue]:
+    """Block consequential finalization while an exact requested review remains unresolved."""
+
+    session_id = record.get("session_id")
+    requests = [
+        item
+        for item in previous_records
+        if item.get("session_id") == session_id and item["event_type"] == "review.requested"
+    ]
+    unresolved: list[str] = []
+    for request in requests:
+        payload = request["payload"]
+        review_id = payload["review_id"]
+        target_sha256 = payload["target_sha256"]
+        completions = [
+            item
+            for item in previous_records
+            if item.get("session_id") == session_id
+            and item["event_type"] == "review.completed"
+            and item["payload"].get("review_id") == review_id
+            and item["payload"].get("target_sha256") == target_sha256
+        ]
+        waivers = [
+            item
+            for item in previous_records
+            if item.get("session_id") == session_id
+            and item["event_type"] == "review.waived"
+            and item["payload"].get("review_id") == review_id
+            and item["payload"].get("target_sha256") == target_sha256
+        ]
+        if (completions and completions[-1]["payload"].get("status") == "pass") or waivers:
+            continue
+        unresolved.append(review_id)
+    if not unresolved:
+        return []
+    return [
+        Issue(
+            ErrorCode.REVIEW_REQUIRED_UNRESOLVED,
+            "$review",
+            "required semantic review is not passed or explicitly waived: " + ", ".join(unresolved),
+        )
+    ]
 
 
 def _forbidden_checkpoint_keys(value: Any) -> set[str]:

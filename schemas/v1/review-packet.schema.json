@@ -1,0 +1,53 @@
+{
+  "$id": "vault-next://schemas/v1/review-packet",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "case_id": {"pattern": "^case_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "created_at": {"format": "date-time", "type": "string"},
+    "packet_id": {"pattern": "^review_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "policy": {
+      "additionalProperties": false,
+      "properties": {
+        "approval_authority": {"const": false, "type": "boolean"},
+        "decision_authority": {"const": false, "type": "boolean"},
+        "tools_available": {"const": false, "type": "boolean"},
+        "write_authority": {"const": false, "type": "boolean"}
+      },
+      "required": ["tools_available", "write_authority", "approval_authority", "decision_authority"],
+      "type": "object"
+    },
+    "review_kind": {"const": "semantic_coherence", "type": "string"},
+    "rubric_id": {"minLength": 1, "type": "string"},
+    "sensitivity": {
+      "additionalProperties": false,
+      "properties": {
+        "labels": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+        "reviewable": {"type": "boolean"},
+        "withheld_source_event_ids": {"items": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}, "type": "array", "uniqueItems": true}
+      },
+      "required": ["labels", "reviewable", "withheld_source_event_ids"],
+      "type": "object"
+    },
+    "session_id": {"pattern": "^session_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "source_event_ids": {"items": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+    "subject": {
+      "additionalProperties": false,
+      "properties": {
+        "alternatives": {"items": {"type": "object"}, "type": "array"},
+        "assumptions": {"items": {"type": "object"}, "type": "array"},
+        "primary_question": {"minLength": 1, "type": "string"},
+        "recommendations": {"items": {"type": "object"}, "type": "array"},
+        "target_ref": {"minLength": 1, "type": "string"},
+        "target_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+        "target_type": {"enum": ["recommendation", "artifact_version", "checkpoint"], "type": "string"}
+      },
+      "required": ["primary_question", "target_type", "target_ref", "target_sha256", "recommendations", "assumptions", "alternatives"],
+      "type": "object"
+    },
+    "schema_version": {"const": "1.0", "type": "string"},
+    "source_watermark": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+  },
+  "required": ["schema_version", "packet_id", "review_kind", "rubric_id", "created_at", "case_id", "session_id", "subject", "source_event_ids", "source_watermark", "sensitivity", "policy"],
+  "type": "object"
+}

@@ -22,14 +22,17 @@ PREFIXES = frozenset(
         "case",
         "checkpoint",
         "decision",
+        "evaluation_run",
         "event",
         "feedback",
         "operation",
         "owner_input",
         "recommendation",
         "review",
+        "review_result",
         "session",
         "triage",
+        "waiver",
         "work_item",
     }
 )

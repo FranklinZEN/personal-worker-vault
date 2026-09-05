@@ -1,0 +1,38 @@
+{
+  "$id": "vault-next://schemas/v1/review-result",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "attempt": {"type": "integer"},
+    "findings": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "explanation": {"minLength": 1, "type": "string"},
+          "finding_id": {"minLength": 1, "type": "string"},
+          "proposed_remediation": {"minLength": 1, "type": "string"},
+          "severity": {"enum": ["low", "medium", "high"], "type": "string"},
+          "source_event_ids": {"items": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true}
+        },
+        "required": ["finding_id", "severity", "source_event_ids", "explanation", "proposed_remediation"],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "packet_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "reason": {"minLength": 1, "type": "string"},
+    "result_id": {"minLength": 1, "type": "string"},
+    "reviewed_at": {"format": "date-time", "type": "string"},
+    "reviewer": {
+      "additionalProperties": false,
+      "properties": {"id": {"minLength": 1, "type": "string"}, "version": {"minLength": 1, "type": "string"}},
+      "required": ["id", "version"],
+      "type": "object"
+    },
+    "schema_version": {"const": "1.0", "type": "string"},
+    "status": {"enum": ["pass", "findings", "unavailable"], "type": "string"},
+    "target_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+  },
+  "required": ["schema_version", "result_id", "attempt", "packet_sha256", "target_sha256", "reviewer", "reviewed_at", "status", "reason", "findings"],
+  "type": "object"
+}

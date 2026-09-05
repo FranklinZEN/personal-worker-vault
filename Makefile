@@ -1,7 +1,7 @@
 PYTHON ?= python3
 export PYTHONPATH := src
 
-.PHONY: format format-check lint typecheck test acceptance verify demo demo-phase2 demo-phase3 demo-phase3a
+.PHONY: format format-check lint typecheck test acceptance verify demo demo-phase2 demo-phase3 demo-phase3a demo-phase4 demo-phase5
 
 format:
 	$(PYTHON) -m vault_next.dev format
@@ -34,3 +34,9 @@ demo-phase3:
 
 demo-phase3a:
 	$(PYTHON) -m vault_next --root .phase3a-demo synthetic-phase3a-run
+
+demo-phase4:
+	$(PYTHON) -m vault_next --root .phase4-demo synthetic-phase4-run
+
+demo-phase5:
+	$(PYTHON) -m vault_next --root .phase5-demo synthetic-phase5-run

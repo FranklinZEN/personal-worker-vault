@@ -11,6 +11,8 @@ from vault_next.fixtures import (
     run_synthetic_phase2,
     run_synthetic_phase3,
     run_synthetic_phase3a,
+    run_synthetic_phase4,
+    run_synthetic_phase5,
     run_synthetic_session,
 )
 from vault_next.paths import RuntimePaths
@@ -31,6 +33,8 @@ def build_parser() -> argparse.ArgumentParser:
     commands.add_parser("synthetic-phase2-run", help="run the synthetic Phase 2 continuity proof")
     commands.add_parser("synthetic-phase3-run", help="run the synthetic Phase 3 routing proof")
     commands.add_parser("synthetic-phase3a-run", help="run the synthetic P3A interaction proof")
+    commands.add_parser("synthetic-phase4-run", help="run the synthetic Phase 4 projection proof")
+    commands.add_parser("synthetic-phase5-run", help="run the synthetic Phase 5 review and evaluation proof")
     commands.add_parser("validate", help="validate semantic and operational ledgers")
     return parser
 
@@ -51,6 +55,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
     if args.command == "synthetic-phase3a-run":
         result = run_synthetic_phase3a(args.root, args.schema_root)
+        print(json.dumps(result.to_record(), indent=2, sort_keys=True))
+        return 0
+    if args.command == "synthetic-phase4-run":
+        result = run_synthetic_phase4(args.root, args.schema_root)
+        print(json.dumps(result.to_record(), indent=2, sort_keys=True))
+        return 0
+    if args.command == "synthetic-phase5-run":
+        result = run_synthetic_phase5(args.root, args.schema_root)
         print(json.dumps(result.to_record(), indent=2, sort_keys=True))
         return 0
 

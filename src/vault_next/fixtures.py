@@ -12,6 +12,7 @@ from vault_next import __version__
 from vault_next.context import ExplicitContextLoader
 from vault_next.catalog import install_synthetic_catalog
 from vault_next.evidence import SyntheticEvidenceStore
+from vault_next.evaluation import EvaluationRegistry
 from vault_next.ids import ULIDFactory
 from vault_next.interaction import InteractionRuntime
 from vault_next.ledger import OperationalLedger, SemanticLedger
@@ -19,8 +20,16 @@ from vault_next.paths import RuntimePaths
 from vault_next.packages import PackageRegistry
 from vault_next.policy import PolicyEngine, Proposal
 from vault_next.projection import build_session_trace, write_session_trace
+from vault_next.readable_projections import (
+    build_artifact_history,
+    build_case_journal,
+    build_current_work_view,
+    build_decision_memo,
+    write_markdown_projection,
+)
 from vault_next.records import SchemaRegistry, build_audit_record, build_event, timestamp
 from vault_next.runtime import CaseSessionRuntime
+from vault_next.review import ReviewRepository, SemanticReviewCoordinator, SemanticReviewWorkflow
 from vault_next.routing import RoutingRuntime
 from vault_next.frameworks import FrameworkExecutor
 from vault_next.triage import TriageRequest, UniversalTriage
@@ -142,6 +151,64 @@ class SyntheticPhase3AResult:
         }
 
 
+@dataclass(frozen=True)
+class SyntheticPhase4Result:
+    """Stable summary of the synthetic Phase 4 generated-view proof."""
+
+    case_id: str
+    session_id: str
+    artifact_id: str
+    decision_id: str
+    semantic_fixture_hash: str
+    operational_fixture_hash: str
+    markdown_projection_hashes: tuple[str, ...]
+    event_count: int
+    projection_count: int
+
+    def to_record(self) -> dict[str, Any]:
+        return {
+            "artifact_id": self.artifact_id,
+            "case_id": self.case_id,
+            "decision_id": self.decision_id,
+            "event_count": self.event_count,
+            "markdown_projection_hashes": list(self.markdown_projection_hashes),
+            "operational_fixture_hash": self.operational_fixture_hash,
+            "projection_count": self.projection_count,
+            "semantic_fixture_hash": self.semantic_fixture_hash,
+            "session_id": self.session_id,
+        }
+
+
+@dataclass(frozen=True)
+class SyntheticPhase5Result:
+    """Stable summary of the synthetic P5 review and regression proof."""
+
+    phase4_case_id: str
+    review_case_id: str
+    review_session_id: str
+    review_target_sha256: str
+    review_result_sha256: str
+    evaluation_run_sha256: str
+    baseline_sha256: str
+    semantic_fixture_hash: str
+    operational_fixture_hash: str
+    event_count: int
+
+    def to_record(self) -> dict[str, Any]:
+        return {
+            "baseline_sha256": self.baseline_sha256,
+            "evaluation_run_sha256": self.evaluation_run_sha256,
+            "event_count": self.event_count,
+            "operational_fixture_hash": self.operational_fixture_hash,
+            "phase4_case_id": self.phase4_case_id,
+            "review_case_id": self.review_case_id,
+            "review_result_sha256": self.review_result_sha256,
+            "review_session_id": self.review_session_id,
+            "review_target_sha256": self.review_target_sha256,
+            "semantic_fixture_hash": self.semantic_fixture_hash,
+        }
+
+
 class SyntheticClock:
     """Deterministic aware clock advancing one second per call."""
 
@@ -152,6 +219,16 @@ class SyntheticClock:
         value = self.current
         self.current += timedelta(seconds=1)
         return value
+
+
+class _SyntheticPassingReviewer:
+    """Fixed synthetic reviewer used only to prove the tool-less interface and replay path."""
+
+    reviewer_id = "synthetic-phase5-reviewer"
+    reviewer_version = "1.0"
+
+    def review(self, packet: dict[str, Any]) -> tuple[str, str, list[dict[str, Any]]]:
+        return "pass", "synthetic rubric found no blocking defect", []
 
 
 def run_synthetic_session(root: Path, schema_root: Path) -> SyntheticRunResult:
@@ -743,4 +820,243 @@ def run_synthetic_phase3a(root: Path, schema_root: Path) -> SyntheticPhase3AResu
         report.operational_fixture_hash,
         projection_hashes,
         report.semantic_event_count,
+    )
+
+
+def run_synthetic_phase4(root: Path, schema_root: Path) -> SyntheticPhase4Result:
+    """Render decision, case, artifact, and current-work views from synthetic records only."""
+
+    phase3a = run_synthetic_phase3a(root, schema_root)
+    paths = RuntimePaths(root)
+    schemas = SchemaRegistry(schema_root)
+    clock = SyntheticClock()
+    clock.current = datetime(2026, 9, 2, 16, 0, tzinfo=UTC)
+    id_factory = ULIDFactory(
+        now_ms=lambda: int(clock.current.timestamp() * 1000),
+        random_source=lambda length: bytes(reversed(range(length))),
+    )
+    runtime = CaseSessionRuntime(
+        paths,
+        schemas,
+        id_factory=id_factory,
+        clock=clock.next,
+        correlation_id="synthetic-phase4-run",
+    )
+    registry = PackageRegistry(paths, schemas, id_factory=id_factory, clock=clock.next)
+    triage = UniversalTriage(registry, schemas, id_factory=id_factory, clock=clock.next)
+    router = RoutingRuntime(runtime, registry)
+
+    resumed = runtime.resume_as_new_session(
+        phase3a.session_ids[-1],
+        primary_question="What is the explicit outcome of the invented reversible choice?",
+    )
+    session_id = resumed["session_id"]
+    plan = triage.plan(
+        TriageRequest(
+            "What is the explicit outcome of the invented reversible choice?",
+            required_work_units=("source_comprehension", "synthesis"),
+            preferred_framework_id="framework_synthesis",
+            preferred_interaction_mode="co_develop",
+        )
+    )
+    router.apply(session_id, plan)
+    runtime.transition_session(session_id, "authorized", reason="synthetic projection review")
+    runtime.transition_session(session_id, "active", reason="begin synthetic decision review")
+    recommendation_id = id_factory.new("recommendation")
+    runtime.record_reasoning_event(
+        session_id,
+        "recommendation.issued",
+        {
+            "recommendation_id": recommendation_id,
+            "revision": 1,
+            "summary": "Preserve the invented reversible constraint in the selected explanation.",
+        },
+        subject_refs=[recommendation_id],
+    )
+    decision = runtime.record_owner_decision(
+        session_id, "Use the invented explanation that preserves reversibility."
+    )
+    decision_id = decision["payload"]["decision_id"]
+    runtime.revise_owner_decision(
+        session_id,
+        decision_id,
+        "Use the invented explanation only while reversibility remains explicit.",
+        reason="owner clarified the acceptance boundary",
+    )
+    outcome_evidence = SyntheticEvidenceStore(
+        paths,
+        schemas,
+        id_factory=id_factory,
+        clock=clock.next,
+        correlation_id="synthetic-phase4-run",
+    ).register(
+        case_id=phase3a.case_id,
+        session_id=session_id,
+        content=b"Invented later outcome: the reversible condition remained visible.",
+        display_name="invented-phase4-outcome.txt",
+    )
+    runtime.record_outcome_assessment(
+        session_id,
+        decision_id,
+        observed_outcome="The invented explanation remained reversible in the synthetic review.",
+        result_quality="mixed",
+        process_quality="strong",
+        prediction_assessment="The explicit boundary was preserved, though the synthetic result is limited.",
+        competing_explanation="The favorable observation may reflect the constrained synthetic fixture.",
+        attribution_confidence="medium",
+        matured_at=timestamp(clock.next()),
+        evidence_refs=[outcome_evidence.metadata["evidence_id"]],
+    )
+    runtime.close_session(
+        session_id,
+        disposition="decided",
+        reason="explicit synthetic decision recorded",
+    )
+
+    events = runtime.semantic.read_all()
+    for prior_session_id in (*phase3a.session_ids, session_id):
+        write_session_trace(
+            build_session_trace(events, prior_session_id, schemas), paths
+        )
+    artifacts = fold_artifact_state(events, case_id=phase3a.case_id)
+    artifact_id = next(iter(artifacts))
+    projections = (
+        build_decision_memo(events, phase3a.case_id, schemas),
+        build_case_journal(events, phase3a.case_id, schemas),
+        build_artifact_history(events, artifact_id, schemas),
+        build_current_work_view(
+            events,
+            as_of_date="2026-09-02",
+            time_zone="America/New_York",
+            schemas=schemas,
+        ),
+    )
+    hashes = tuple(
+        write_markdown_projection(projection, paths).projection_sha256
+        for projection in projections
+    )
+    report = KernelValidator(paths, schemas).validate()
+    if not report.passed:
+        raise RuntimeError(f"synthetic Phase 4 fixture failed repository validation: {report.issues}")
+    return SyntheticPhase4Result(
+        phase3a.case_id,
+        session_id,
+        artifact_id,
+        decision_id,
+        report.semantic_fixture_hash,
+        report.operational_fixture_hash,
+        hashes,
+        report.semantic_event_count,
+        report.projection_count,
+    )
+
+
+def run_synthetic_phase5(root: Path, schema_root: Path) -> SyntheticPhase5Result:
+    """Replay the P4 question-to-outcome proof and a separate exact-review finalization journey."""
+
+    phase4 = run_synthetic_phase4(root, schema_root)
+    paths = RuntimePaths(root)
+    schemas = SchemaRegistry(schema_root)
+    clock = SyntheticClock()
+    clock.current = datetime(2026, 9, 3, 16, 0, tzinfo=UTC)
+    id_factory = ULIDFactory(
+        now_ms=lambda: int(clock.current.timestamp() * 1000),
+        random_source=lambda length: bytes((length - index - 1) for index in range(length)),
+    )
+    runtime = CaseSessionRuntime(
+        paths,
+        schemas,
+        id_factory=id_factory,
+        clock=clock.next,
+        correlation_id="synthetic-phase5-run",
+    )
+    coordinator = SemanticReviewCoordinator(
+        ReviewRepository(paths, schemas), schemas, id_factory=id_factory, clock=clock.next
+    )
+    workflow = SemanticReviewWorkflow(coordinator, runtime)
+    case = runtime.create_case("Synthetic Phase 5 semantic review proof")
+    case_id = case["case_id"]
+    session = runtime.create_session(
+        case_id, "Can the invented recommendation pass an exact, tool-less semantic review?"
+    )
+    session_id = session["session_id"]
+    for status in ("routed", "authorized", "active"):
+        runtime.transition_session(session_id, status, reason=f"synthetic {status}")
+    recommendation_id = id_factory.new("recommendation")
+    runtime.record_reasoning_event(
+        session_id,
+        "recommendation.issued",
+        {
+            "recommendation_id": recommendation_id,
+            "revision": 1,
+            "summary": "Use the invented reversible explanation with its stated limit.",
+        },
+        subject_refs=[recommendation_id],
+    )
+    packet, packet_sha256 = workflow.request(
+        session_id, target_type="recommendation", target_ref=recommendation_id
+    )
+    review = workflow.run(
+        session_id, packet, packet_sha256, _SyntheticPassingReviewer(), attempt=1
+    )
+    runtime.record_owner_decision(
+        session_id, "Choose the invented explanation after the explicit synthetic review."
+    )
+    runtime.close_session(session_id, disposition="decided", reason="synthetic review passed")
+    # Current-work views intentionally cover all canonical cases, so refresh the inherited P4 view
+    # after adding the separate P5 review case. The semantic ledger itself is never rewritten.
+    write_markdown_projection(
+        build_current_work_view(
+            runtime.semantic.read_all(),
+            as_of_date="2026-09-02",
+            time_zone="America/New_York",
+            schemas=schemas,
+        ),
+        paths,
+    )
+    report = KernelValidator(paths, schemas).validate()
+    if not report.passed:
+        raise RuntimeError(f"synthetic Phase 5 fixture failed repository validation: {report.issues}")
+    evaluation = EvaluationRegistry(paths, schemas, id_factory=id_factory, clock=clock.next)
+    phase4_routing = next(
+        (
+            event["payload"].get("plan", {})
+            for event in runtime.semantic.read_all()
+            if event["session_id"] == phase4.session_id
+            and event["event_type"] == "routing.proposed"
+        ),
+        {},
+    )
+    run = evaluation.run(
+        {"suite_id": "synthetic-phase5-core", "suite_version": "1.0"},
+        {
+            "event-invariants": lambda: {"passed": report.passed, "semantic_hash": report.semantic_fixture_hash},
+            "projections": lambda: {"passed": report.projection_count >= 4},
+            "reviewer-rubric": lambda: {"passed": review.result["status"] == "pass"},
+            "routing": lambda: {
+                "passed": phase4_routing.get("route_type") == "dynamic"
+                and bool(phase4_routing.get("selected_packages")),
+                "plan_sha256": phase4_routing.get("plan_sha256"),
+            },
+        },
+    )
+    baseline = evaluation.establish_or_change_baseline(
+        run,
+        reviewed_change_record_sha256=review.result_sha256,
+        explicit_confirmation=True,
+    )
+    final_report = KernelValidator(paths, schemas).validate()
+    if not final_report.passed:
+        raise RuntimeError(f"synthetic Phase 5 post-evaluation validation failed: {final_report.issues}")
+    return SyntheticPhase5Result(
+        phase4.case_id,
+        case_id,
+        session_id,
+        packet["subject"]["target_sha256"],
+        review.result_sha256,
+        run.sha256,
+        baseline["baseline_sha256"],
+        final_report.semantic_fixture_hash,
+        final_report.operational_fixture_hash,
+        final_report.semantic_event_count,
     )

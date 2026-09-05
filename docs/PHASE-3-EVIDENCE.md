@@ -16,8 +16,8 @@ approval, and become the active pointer.
 This evidence remains valid for the Phase 3 scope that was authorized. A subsequent product review
 identified cross-cutting interaction requirements that were not explicit in that scope. The owner
 approved the resulting design and separately authorized P3A, which is now implemented and evidenced
-in `docs/PHASE-3A-EVIDENCE.md`. The two evidence packages now await combined owner approval; neither
-authorizes Phase 4.
+in `docs/PHASE-3A-EVIDENCE.md`. The two evidence packages received combined owner approval on
+2026-09-04; P4 is separately implemented and evidenced in `docs/PHASE-4-EVIDENCE.md`.
 
 ## Post-evidence design review finding
 

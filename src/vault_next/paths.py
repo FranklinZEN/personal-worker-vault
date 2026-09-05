@@ -58,6 +58,12 @@ class RuntimePaths:
         return self.root / "data" / "evaluations"
 
     @property
+    def review_root(self) -> Path:
+        """Immutable local review packets, results, and owner waivers."""
+
+        return self.root / "data" / "reviews"
+
+    @property
     def artifact_root(self) -> Path:
         return self.root / "data" / "artifacts"
 
@@ -105,6 +111,7 @@ class RuntimePaths:
             self.evidence_root,
             self.package_root,
             self.evaluation_root,
+            self.review_root,
             self.artifact_root,
             self.projection_root,
             self.quarantine_root,

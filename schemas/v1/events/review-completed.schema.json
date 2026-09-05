@@ -1,0 +1,15 @@
+{
+  "$id": "vault-next://schemas/v1/events/review-completed",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "attempt": {"type": "integer"},
+    "packet_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "result_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "review_id": {"pattern": "^review_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "status": {"enum": ["pass", "findings", "unavailable"], "type": "string"},
+    "target_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+  },
+  "required": ["review_id", "attempt", "packet_sha256", "result_sha256", "target_sha256", "status"],
+  "type": "object"
+}

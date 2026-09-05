@@ -1,0 +1,15 @@
+{
+  "$id": "vault-next://schemas/v1/events/review-requested",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "packet_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "review_id": {"pattern": "^review_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "requires_semantic_review": {"const": true, "type": "boolean"},
+    "target_ref": {"minLength": 1, "type": "string"},
+    "target_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "target_type": {"enum": ["recommendation", "artifact_version", "checkpoint"], "type": "string"}
+  },
+  "required": ["review_id", "packet_sha256", "target_type", "target_ref", "target_sha256", "requires_semantic_review"],
+  "type": "object"
+}

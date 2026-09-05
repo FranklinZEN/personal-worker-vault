@@ -1,0 +1,19 @@
+{
+  "$id": "vault-next://schemas/v1/evaluation-baseline",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "baseline_id": {"minLength": 1, "type": "string"},
+    "baseline_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "established_at": {"format": "date-time", "type": "string"},
+    "explicit_confirmation": {"const": true, "type": "boolean"},
+    "owner_id": {"minLength": 1, "type": "string"},
+    "reviewed_change_record_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "run_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "suite_id": {"minLength": 1, "type": "string"},
+    "suite_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+  },
+  "required": ["schema_version", "baseline_id", "suite_id", "suite_sha256", "run_sha256", "reviewed_change_record_sha256", "owner_id", "explicit_confirmation", "established_at", "baseline_sha256"],
+  "type": "object"
+}

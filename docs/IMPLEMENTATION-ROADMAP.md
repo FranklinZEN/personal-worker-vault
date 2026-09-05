@@ -1,6 +1,6 @@
 # Vault Next Implementation Roadmap
 
-Status: P3A implemented under synthetic-only scope; evidence awaiting owner review  
+Status: P5 implemented under synthetic-only scope; evidence awaiting owner review
 Date: 2026-09-01
 
 ## Executive plan
@@ -379,11 +379,12 @@ The authorized synthetic-only deliverables and completion gate are implemented. 
 deterministic hashes, acceptance results, negative checks, and known limits are recorded in
 `docs/PHASE-3-EVIDENCE.md`. That evidence remains technically valid for the original scope. The
 approved interaction-first amendment is implemented and evidenced in `docs/PHASE-3A-EVIDENCE.md`;
-the combined Phase 3/P3A evidence awaits owner approval. Phase 4 remains unauthorized.
+the combined Phase 3/P3A evidence was approved on 2026-09-04. P4 was then separately authorized and
+is evidenced in `docs/PHASE-4-EVIDENCE.md`.
 
 ## P3A — Interaction-first session and working-artifact contracts
 
-Status: Implemented under the authorized synthetic-only scope; evidence awaiting owner review.
+Status: Owner approved together with Phase 3; P4 subsequently authorized.
 
 ### Approval record
 
@@ -443,10 +444,20 @@ platform adapters, and draft-governance activation.
 
 The authorized deliverables and structured P3A completion gate are implemented. Deterministic
 results, hashes, negative checks, and deferred P4/P8 assertions are recorded in
-`docs/PHASE-3A-EVIDENCE.md`. P4 remains unauthorized pending owner review and a separate explicit
-next-phase decision.
+`docs/PHASE-3A-EVIDENCE.md`. P4 was later separately authorized and is evidenced in
+`docs/PHASE-4-EVIDENCE.md`. P5 was separately authorized later and is evidenced in
+`docs/PHASE-5-EVIDENCE.md`; P5A remains unauthorized.
 
 ## P4 — Decision and case projections
+
+Status: Owner approved; P5 subsequently authorized.
+
+### Approval record
+
+The repository owner approved the combined Phase 3/P3A evidence and authorized this roadmap's exact
+synthetic-only P4 scope in the Vault Next Codex conversation on 2026-09-04. The authorization
+excludes personal profile/content access, migration, model calls, external services, scheduling,
+background work, platform adapters, and draft-governance activation.
 
 ### Goal
 
@@ -475,7 +486,26 @@ canonical records.
 - Clean rebuild from empty projection directories is equivalent.
 - Generated views clearly identify themselves and cannot be promoted by direct edit.
 
+### Implementation status
+
+The authorized deliverables and structured P4 completion gate are implemented. The runtime produces
+hash-bound, provenance-labelled Markdown decision memos, case journals, working-artifact histories,
+and current-work views. Generated-file edits are detected, quarantined, and replaced only by a clean
+rebuild. A narrowly scoped owner-only `outcome.assessed` event separates later result/process review
+from the historical owner decision. Deterministic evidence, negative checks, and known limits are
+recorded in `docs/PHASE-4-EVIDENCE.md`. The owner approved P4 evidence on 2026-09-04 and separately
+authorized P5, which is implemented and evidenced below.
+
 ## P5 — Semantic review and evaluation foundation
+
+Status: Implemented under the authorized synthetic-only scope; evidence awaiting owner review.
+
+### Approval record
+
+The repository owner approved Phase 4 evidence and authorized this roadmap's exact synthetic-only P5
+scope in the Vault Next Codex conversation on 2026-09-04. The authorization excludes personal
+profile/content access, migration, model calls, external services, scheduling, background work,
+platform adapters, and draft-governance activation.
 
 ### Goal
 
@@ -499,6 +529,14 @@ Add qualitative guardrails and regression replay without granting the reviewer a
 - Reviewer cannot access tools, write state, approve, or decide.
 - Baseline changes require explicit reviewed change records.
 - One synthetic end-to-end case replays from question through outcome.
+
+### Implementation status
+
+The authorized P5 foundation is implemented. Fixed review packets, immutable result/waiver records,
+exact reviewed-hash enforcement, non-passing unavailability/retry handling, synthetic regression
+reports, and review-bound evaluation baselines are recorded in `docs/PHASE-5-EVIDENCE.md`. The
+candidate redaction protocol is deliberately inactive pending a separate owner/source/purpose
+authorization. P5A remains unauthorized.
 
 ## P5A — Personal use-case profile program
 

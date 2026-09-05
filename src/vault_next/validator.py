@@ -15,6 +15,11 @@ from vault_next.ledger import OperationalLedger, SemanticLedger
 from vault_next.paths import RuntimePaths
 from vault_next.packages import PackageRegistry
 from vault_next.projection import build_session_trace, verify_projection
+from vault_next.readable_projections import (
+    parse_markdown_projection_header,
+    rebuild_markdown_projection,
+    verify_markdown_projection,
+)
 from vault_next.records import SCHEMA_VERSION, SchemaRegistry
 
 
@@ -69,6 +74,8 @@ class KernelValidator:
             issues.extend(self._cross_reference_issues(events, operations))
             projection_count, projection_issues = self._projection_issues(events)
             issues.extend(projection_issues)
+            issues.extend(self._review_issues(events))
+            issues.extend(self._evaluation_issues())
         else:
             projection_count = 0
         return ValidationReport(
@@ -79,6 +86,161 @@ class KernelValidator:
             canonical_sha256(events),
             canonical_sha256(operations),
         )
+
+    def _review_issues(self, events: list[dict[str, Any]]) -> list[Issue]:
+        """Verify immutable P5 review records and their exact canonical-event bindings."""
+
+        issues: list[Issue] = []
+        packets: dict[str, tuple[dict[str, Any], str]] = {}
+        requests = {
+            event["payload"].get("review_id"): event
+            for event in events
+            if event["event_type"] == "review.requested"
+        }
+        packet_root = self.paths.review_root / "packets"
+        for path in sorted(packet_root.glob("*.json")) if packet_root.exists() else []:
+            try:
+                raw = path.read_bytes()
+                packet = json.loads(raw)
+                if canonical_bytes(packet) + b"\n" != raw:
+                    raise ValueError("review packet is not canonical JSON")
+                self.schemas.require("review-packet", packet)
+                packet_sha256 = canonical_sha256(packet)
+                request = requests[packet["packet_id"]]
+                prior_session_events = [
+                    event
+                    for event in events[: events.index(request)]
+                    if event.get("session_id") == packet["session_id"]
+                ]
+                expected_sources = [event["event_id"] for event in prior_session_events]
+                if (
+                    request["payload"].get("packet_sha256") != packet_sha256
+                    or request["payload"].get("target_type") != packet["subject"]["target_type"]
+                    or request["payload"].get("target_ref") != packet["subject"]["target_ref"]
+                    or request["payload"].get("target_sha256") != packet["subject"]["target_sha256"]
+                    or packet["source_event_ids"] != expected_sources
+                    or packet["source_watermark"]
+                    != prior_session_events[-1]["integrity"]["event_sha256"]
+                ):
+                    raise ValueError("review packet differs from its exact request/source watermark")
+                packets[packet["packet_id"]] = (packet, packet_sha256)
+            except (KeyError, ValueError, json.JSONDecodeError, ValidationError) as exc:
+                issues.append(
+                    Issue(ErrorCode.REVIEW_RESULT_INVALID, str(path), f"review packet failed: {type(exc).__name__}")
+                )
+        completion_by_result = {
+            event["payload"].get("result_sha256"): event
+            for event in events
+            if event["event_type"] == "review.completed"
+        }
+        results_by_sha256: dict[str, dict[str, Any]] = {}
+        result_root = self.paths.review_root / "results"
+        for path in sorted(result_root.glob("*.json")) if result_root.exists() else []:
+            try:
+                raw = path.read_bytes()
+                result = json.loads(raw)
+                if canonical_bytes(result) + b"\n" != raw:
+                    raise ValueError("review result is not canonical JSON")
+                self.schemas.require("review-result", result)
+                review_id = path.stem.rsplit("-", 1)[0]
+                packet, packet_sha256 = packets[review_id]
+                result_sha256 = canonical_sha256(result)
+                results_by_sha256[result_sha256] = result
+                completion = completion_by_result[result_sha256]
+                if (
+                    result["packet_sha256"] != packet_sha256
+                    or result["target_sha256"] != packet["subject"]["target_sha256"]
+                    or completion["payload"].get("review_id") != review_id
+                    or completion["payload"].get("status") != result["status"]
+                ):
+                    raise ValueError("review result differs from packet or completion event")
+            except (KeyError, ValueError, json.JSONDecodeError, ValidationError) as exc:
+                issues.append(
+                    Issue(ErrorCode.REVIEW_RESULT_INVALID, str(path), f"review result failed: {type(exc).__name__}")
+                )
+        waiver_root = self.paths.review_root / "waivers"
+        waiver_events = [event for event in events if event["event_type"] == "review.waived"]
+        for path in sorted(waiver_root.glob("*.json")) if waiver_root.exists() else []:
+            try:
+                raw = path.read_bytes()
+                waiver = json.loads(raw)
+                if canonical_bytes(waiver) + b"\n" != raw:
+                    raise ValueError("review waiver is not canonical JSON")
+                self.schemas.require("review-waiver", waiver)
+                result = results_by_sha256[waiver["result_sha256"]]
+                event = next(
+                    item
+                    for item in waiver_events
+                    if item["payload"].get("waiver_id") == waiver["waiver_id"]
+                )
+                if (
+                    waiver["review_id"] != event["payload"].get("review_id")
+                    or waiver["target_sha256"] != result["target_sha256"]
+                    or not set(waiver["finding_ids"])
+                    .issubset({finding["finding_id"] for finding in result["findings"]})
+                ):
+                    raise ValueError("review waiver differs from exact finding result")
+            except (KeyError, StopIteration, ValueError, json.JSONDecodeError, ValidationError) as exc:
+                issues.append(
+                    Issue(ErrorCode.REVIEW_RESULT_INVALID, str(path), f"review waiver failed: {type(exc).__name__}")
+                )
+        return issues
+
+    def _evaluation_issues(self) -> list[Issue]:
+        """Verify P5 regression reports and baselines are canonical and review-bound."""
+
+        issues: list[Issue] = []
+        result_hashes: set[str] = set()
+        result_root = self.paths.review_root / "results"
+        for path in sorted(result_root.glob("*.json")) if result_root.exists() else []:
+            try:
+                result_hashes.add(canonical_sha256(json.loads(path.read_text(encoding="utf-8"))))
+            except (OSError, json.JSONDecodeError):
+                continue
+        runs: set[str] = set()
+        run_root = self.paths.evaluation_root / "runs"
+        for path in sorted(run_root.glob("*.json")) if run_root.exists() else []:
+            try:
+                raw = path.read_bytes()
+                run = json.loads(raw)
+                if canonical_bytes(run) + b"\n" != raw:
+                    raise ValueError("evaluation run is not canonical JSON")
+                self.schemas.require("evaluation-run", run)
+                zeroed = dict(run)
+                zeroed["run_sha256"] = "0" * 64
+                if run["run_sha256"] != canonical_sha256(zeroed):
+                    raise ValueError("evaluation run self digest differs")
+                runs.add(canonical_sha256(run))
+            except (KeyError, ValueError, json.JSONDecodeError, ValidationError) as exc:
+                issues.append(
+                    Issue(ErrorCode.REVIEW_RESULT_INVALID, str(path), f"evaluation run failed: {type(exc).__name__}")
+                )
+        baseline_root = self.paths.evaluation_root / "baselines"
+        for path in sorted(baseline_root.glob("*.json")) if baseline_root.exists() else []:
+            try:
+                raw = path.read_bytes()
+                baseline = json.loads(raw)
+                if canonical_bytes(baseline) + b"\n" != raw:
+                    raise ValueError("evaluation baseline is not canonical JSON")
+                self.schemas.require("evaluation-baseline", baseline)
+                zeroed = dict(baseline)
+                zeroed["baseline_sha256"] = "0" * 64
+                if baseline["baseline_sha256"] != canonical_sha256(zeroed):
+                    raise ValueError("evaluation baseline self digest differs")
+                if (
+                    baseline["run_sha256"] not in runs
+                    or baseline["reviewed_change_record_sha256"] not in result_hashes
+                ):
+                    raise ValueError("baseline lacks stored run or reviewed change record")
+            except (KeyError, ValueError, json.JSONDecodeError, ValidationError) as exc:
+                issues.append(
+                    Issue(
+                        ErrorCode.REVIEW_RESULT_INVALID,
+                        str(path),
+                        f"evaluation baseline failed: {type(exc).__name__}",
+                    )
+                )
+        return issues
 
     @staticmethod
     def _cross_reference_issues(
@@ -146,6 +308,39 @@ class KernelValidator:
                         ErrorCode.PROJECTION_TAMPERED,
                         str(path),
                         f"generated projection validation failed: {type(exc).__name__}",
+                    )
+                )
+        markdown_root = self.paths.projection_root
+        markdown_paths = (
+            sorted(markdown_root.rglob("*.md")) if markdown_root.exists() else []
+        )
+        for path in markdown_paths:
+            try:
+                raw = path.read_bytes()
+                content = raw.decode("utf-8")
+                if not verify_markdown_projection(content):
+                    raise ValueError("Markdown projection content digest does not match")
+                envelope = parse_markdown_projection_header(content)
+                self.schemas.require("projection-metadata", envelope["metadata"])
+                expected = rebuild_markdown_projection(events, content, self.schemas)
+                expected_path = self.paths.projection_root / expected.relative_path
+                if path.resolve() != expected_path.resolve():
+                    raise ValueError("Markdown projection path does not match its parameters")
+                if expected.content.encode("utf-8") != raw:
+                    raise ValueError("Markdown projection differs from clean rebuild")
+            except (
+                KeyError,
+                TypeError,
+                UnicodeDecodeError,
+                ValueError,
+                json.JSONDecodeError,
+                ValidationError,
+            ) as exc:
+                issues.append(
+                    Issue(
+                        ErrorCode.PROJECTION_TAMPERED,
+                        str(path),
+                        f"generated Markdown projection validation failed: {type(exc).__name__}",
                     )
                 )
         context_dir = self.paths.projection_root / "context"
@@ -256,4 +451,4 @@ class KernelValidator:
                             "orphan working-artifact object has no canonical version event",
                         )
                     )
-        return len(paths) + len(context_paths), issues
+        return len(paths) + len(context_paths) + len(markdown_paths), issues
