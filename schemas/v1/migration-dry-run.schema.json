@@ -1,0 +1,84 @@
+{
+  "$id": "vault-next://schemas/v1/migration-dry-run",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "candidates": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "candidate_id": {"pattern": "^candidate_sha256_[0-9a-f]{64}$", "type": "string"},
+          "disposition": {"enum": ["exact-copy", "quarantine", "transform"], "type": "string"},
+          "mapping_rule": {"minLength": 1, "type": "string"},
+          "proposed_target": {"minLength": 1, "type": "string"},
+          "source_content_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+          "source_relative_path": {"minLength": 1, "type": "string"},
+          "target_authority": {"const": "historical_non_authoritative", "type": "string"}
+        },
+        "required": ["candidate_id", "disposition", "mapping_rule", "source_content_sha256", "source_relative_path", "proposed_target", "target_authority"],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "contract_version": {"const": "1.0", "type": "string"},
+    "exceptions": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {"enum": ["MIGRATION_SYMLINK_OUT_OF_SCOPE", "READ_ERROR", "TARGET_COLLISION", "UNSUPPORTED", "UNSUPPORTED_HARD_LINK", "UNSUPPORTED_PATH", "UNSUPPORTED_SPECIAL_FILE"], "type": "string"},
+          "reason": {"minLength": 1, "type": "string"},
+          "relative_path": {"minLength": 1, "type": "string"}
+        },
+        "required": ["code", "relative_path", "reason"],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "fidelity": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "candidate_id": {"pattern": "^candidate_sha256_[0-9a-f]{64}$", "type": "string"},
+          "source_content_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+          "status": {"const": "exact-match", "type": "string"},
+          "target_content_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+        },
+        "required": ["candidate_id", "source_content_sha256", "target_content_sha256", "status"],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "provenance": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "candidate_id": {"pattern": "^candidate_sha256_[0-9a-f]{64}$", "type": "string"},
+          "mapping_rule": {"minLength": 1, "type": "string"},
+          "source_content_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+          "source_relative_path": {"minLength": 1, "type": "string"}
+        },
+        "required": ["candidate_id", "mapping_rule", "source_content_sha256", "source_relative_path"],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "reconciliation": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "disposition": {"enum": ["exact-copy", "quarantine", "reference-only", "skip", "transform"], "type": "string"},
+          "relative_path": {"minLength": 1, "type": "string"},
+          "status": {"enum": ["exception", "mapped"], "type": "string"}
+        },
+        "required": ["disposition", "relative_path", "status"],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "run_id": {"pattern": "^migration_run_sha256_[0-9a-f]{64}$", "type": "string"},
+    "run_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "snapshot_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+  },
+  "required": ["contract_version", "run_id", "run_sha256", "snapshot_sha256", "candidates", "provenance", "exceptions", "reconciliation", "fidelity"],
+  "type": "object"
+}

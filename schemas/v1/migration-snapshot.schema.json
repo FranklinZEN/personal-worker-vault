@@ -1,0 +1,31 @@
+{
+  "$id": "vault-next://schemas/v1/migration-snapshot",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "contract_version": {"const": "1.0", "type": "string"},
+    "items": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "byte_count": {"type": "integer"},
+          "content_sha256": {"pattern": "^[0-9a-f]{64}$", "type": ["string", "null"]},
+          "error": {"enum": ["READ_ERROR", "UNSUPPORTED_HARD_LINK", "UNSUPPORTED_PATH", "UNSUPPORTED_SPECIAL_FILE"], "type": "string"},
+          "is_binary": {"type": "boolean"},
+          "kind": {"enum": ["directory", "file", "inaccessible", "symlink"], "type": "string"},
+          "relative_path": {"minLength": 1, "type": "string"},
+          "symlink_inside_source": {"type": "boolean"}
+        },
+        "required": ["kind", "relative_path", "byte_count", "content_sha256"],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "repositories": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+    "ruleset_version": {"minLength": 1, "type": "string"},
+    "snapshot_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "source_label": {"minLength": 1, "type": "string"}
+  },
+  "required": ["contract_version", "source_label", "ruleset_version", "items", "repositories", "snapshot_sha256"],
+  "type": "object"
+}
