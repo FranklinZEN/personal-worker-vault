@@ -1,0 +1,15 @@
+{
+  "$id": "vault-next://schemas/v1/s2-read-propose-request",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "historical_diff_query": {"type": ["object", "null"]},
+    "pending_update": {"type": ["object", "null"]},
+    "request": {"type": "object"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "status_query": {"type": ["object", "null"]}
+  },
+  "required": ["schema_version", "request", "status_query", "historical_diff_query", "pending_update"],
+  "title": "Vault Next S2 read/propose request",
+  "type": "object"
+}

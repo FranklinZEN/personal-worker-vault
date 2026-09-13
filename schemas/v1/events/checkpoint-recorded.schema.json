@@ -5,6 +5,7 @@
   "properties": {
     "checkpoint_id": {"pattern": "^checkpoint_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
     "contract_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "idempotency_key": {"minLength": 1, "type": "string"},
     "open_questions": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
     "source_event_ids": {
       "items": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
@@ -13,7 +14,9 @@
     },
     "source_watermark": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
     "state": {"additionalProperties": true, "type": "object"},
-    "summary": {"minLength": 1, "type": "string"}
+    "summary": {"minLength": 1, "type": "string"},
+    "request_id": {"pattern": "^request_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "request_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
   },
   "required": [
     "checkpoint_id",

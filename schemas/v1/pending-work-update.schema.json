@@ -1,0 +1,16 @@
+{
+  "$id": "vault-next://schemas/v1/pending-work-update",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "case_id": {"pattern": "^case_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "expected_revision": {"type": "integer"},
+    "expires_at": {"format": "date-time", "type": "string"},
+    "next_state": {"additionalProperties": false, "properties": {"blocker": {"type": ["string", "null"]}, "due_on": {"type": ["string", "null"]}, "next_review_on": {"type": ["string", "null"]}, "priority": {"type": ["string", "null"]}, "source_kind": {"enum": ["owner_instruction", "system_suggestion"], "type": "string"}, "statement": {"minLength": 1, "type": "string"}, "status": {"enum": ["proposed", "open", "in_progress", "waiting", "done", "cancelled"], "type": "string"}}, "required": ["statement", "status", "source_kind", "priority", "due_on", "next_review_on", "blocker"], "type": "object"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "selection": {"type": "object"}
+  },
+  "required": ["schema_version", "case_id", "selection", "expected_revision", "next_state", "expires_at"],
+  "title": "Vault Next single-case pending work update",
+  "type": "object"
+}

@@ -1,0 +1,54 @@
+{
+  "$id": "vault-next://schemas/v2/event",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "actor": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {"minLength": 1, "type": "string"},
+        "type": {"enum": ["owner", "runtime", "skill", "reviewer", "importer"], "type": "string"}
+      },
+      "required": ["type", "id"],
+      "type": "object"
+    },
+    "approval_ref": {"pattern": "^approval_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": ["string", "null"]},
+    "case_id": {"pattern": "^case_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "causation_event_id": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": ["string", "null"]},
+    "correlation_id": {"minLength": 1, "type": "string"},
+    "event_id": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "event_type": {"const": "work_batch.committed", "type": "string"},
+    "integrity": {
+      "additionalProperties": false,
+      "properties": {
+        "event_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+        "payload_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+        "previous_event_sha256": {"pattern": "^(GENESIS|[0-9a-f]{64})$", "type": "string"}
+      },
+      "required": ["payload_sha256", "previous_event_sha256", "event_sha256"],
+      "type": "object"
+    },
+    "occurred_at": {"format": "date-time", "type": "string"},
+    "payload": {"additionalProperties": true, "type": "object"},
+    "provenance": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "ref": {"minLength": 1, "type": "string"},
+          "relation": {"enum": ["quotes", "summarizes", "supports", "challenges", "derives_from", "responds_to", "corrects", "supersedes", "caused_by"], "type": "string"}
+        },
+        "required": ["ref", "relation"],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "recorded_at": {"format": "date-time", "type": "string"},
+    "schema_version": {"const": "2.0", "type": "string"},
+    "sensitivity": {"enum": ["none", "personal", "work", "hr", "political", "legal", "formal_eval", "irreversible"], "type": "string"},
+    "session_id": {"pattern": "^session_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": ["string", "null"]},
+    "subject_refs": {"items": {"minLength": 1, "type": "string"}, "type": "array"}
+  },
+  "required": ["schema_version", "event_id", "event_type", "occurred_at", "recorded_at", "actor", "case_id", "session_id", "subject_refs", "correlation_id", "causation_event_id", "provenance", "sensitivity", "approval_ref", "payload", "integrity"],
+  "title": "Vault Next v2 embedded work-batch semantic event",
+  "type": "object"
+}

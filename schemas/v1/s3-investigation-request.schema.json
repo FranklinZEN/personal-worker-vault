@@ -1,0 +1,43 @@
+{
+  "$id": "vault-next://schemas/v1/s3-investigation-request",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "analysis_text": {"maxLength": 16000, "minLength": 1, "type": ["string", "null"]},
+    "checkpoint": {
+      "additionalProperties": false,
+      "properties": {
+        "open_questions": {"items": {"maxLength": 1000, "minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+        "state": {"additionalProperties": true, "type": "object"},
+        "summary": {"maxLength": 8000, "minLength": 1, "type": "string"}
+      },
+      "required": ["summary", "state", "open_questions"],
+      "type": ["object", "null"]
+    },
+    "checkpoint_event_id": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": ["string", "null"]},
+    "context_refs": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+    "operation": {"enum": ["investigate", "pause", "resume", "revise"], "type": "string"},
+    "request": {"type": "object"},
+    "revision": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {"pattern": "^artifact_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+        "change_summary": {"maxLength": 4000, "minLength": 1, "type": "string"},
+        "content": {"maxLength": 64000, "minLength": 1, "type": "string"},
+        "content_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+        "media_type": {"minLength": 1, "type": "string"},
+        "prior_content_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+        "purpose": {"maxLength": 4000, "minLength": 1, "type": "string"},
+        "version_id": {"pattern": "^artifact_version_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}
+      },
+      "required": ["artifact_id", "version_id", "prior_content_sha256", "content", "content_sha256", "purpose", "change_summary", "media_type"],
+      "type": ["object", "null"]
+    },
+    "schema_version": {"const": "1.0", "type": "string"},
+    "session_id": {"pattern": "^session_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": ["string", "null"]},
+    "topic": {"maxLength": 4000, "minLength": 1, "type": ["string", "null"]}
+  },
+  "required": ["schema_version", "request", "operation", "topic", "analysis_text", "session_id", "context_refs", "checkpoint_event_id", "checkpoint", "revision"],
+  "title": "Vault Next S3-A structured investigation request",
+  "type": "object"
+}

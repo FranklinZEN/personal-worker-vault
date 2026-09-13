@@ -1,0 +1,19 @@
+{
+  "$id": "vault-next://schemas/v1/owner-receipt",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "approval_id": {"pattern": "^approval_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "authority_id": {"minLength": 1, "type": "string"},
+    "consequence_class": {"minLength": 1, "type": "string"},
+    "expires_at": {"format": "date-time", "type": ["string", "null"]},
+    "issued_at": {"format": "date-time", "type": "string"},
+    "proposal_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "receipt_id": {"pattern": "^receipt_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "targets": {"items": {"minLength": 1, "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true}
+  },
+  "required": ["schema_version", "receipt_id", "authority_id", "approval_id", "proposal_digest", "targets", "consequence_class", "issued_at", "expires_at"],
+  "title": "Vault Next owner-receipt envelope",
+  "type": "object"
+}

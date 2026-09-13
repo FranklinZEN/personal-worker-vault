@@ -1,0 +1,16 @@
+{
+  "$id": "vault-next://schemas/v1/historical-work-diff",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "baseline_watermark": {"pattern": "^(GENESIS|[0-9a-f]{64})$", "type": "string"},
+    "changes": {"items": {"type": "object"}, "type": "array", "uniqueItems": true},
+    "current_watermark": {"pattern": "^(GENESIS|[0-9a-f]{64})$", "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "scope_case_ids": {"items": {"pattern": "^case_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}, "type": "array", "uniqueItems": true},
+    "time_zone": {"minLength": 1, "type": "string"}
+  },
+  "required": ["schema_version", "scope_case_ids", "time_zone", "baseline_watermark", "current_watermark", "changes"],
+  "title": "Vault Next committed historical work difference",
+  "type": "object"
+}

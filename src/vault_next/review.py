@@ -15,7 +15,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Protocol
 
-from vault_next.canonical import canonical_bytes, canonical_sha256
+from vault_next.canonical import canonical_bytes, canonical_sha256, sha256_hex
 from vault_next.errors import ErrorCode, Issue, ValidationError
 from vault_next.ids import DEFAULT_FACTORY, ULIDFactory
 from vault_next.paths import RuntimePaths
@@ -23,6 +23,29 @@ from vault_next.records import SCHEMA_VERSION, SchemaRegistry, aware_utc_now, ti
 
 
 REVIEWABLE_SENSITIVITY = frozenset({"none"})
+MAX_PRIMARY_QUESTION_BYTES = 4 * 1024
+MAX_TARGET_EVENT_BYTES = 16 * 1024
+MAX_ARTIFACT_BYTES = 64 * 1024
+MAX_CONTEXT_RECORD_BYTES = 8 * 1024
+MAX_CONTEXT_RECORDS = 32
+MAX_EVIDENCE_BYTES = 16 * 1024
+MAX_EVIDENCE_RECORDS = 16
+MAX_EVIDENCE_TOTAL_BYTES = 128 * 1024
+CONTEXT_EVENT_TYPES = frozenset(
+    {
+        "claim.recorded",
+        "assumption.recorded",
+        "assumption.revised",
+        "alternative.recorded",
+        "alternative.disposition_changed",
+        "disagreement.recorded",
+        "disagreement.resolved",
+        "recommendation.issued",
+        "recommendation.revised",
+        "owner_input.recorded",
+        "artifact.feedback_recorded",
+    }
+)
 
 
 class ReviewerUnavailable(Exception):
@@ -47,6 +70,7 @@ class ReviewTarget:
     target_ref: str
     target_sha256: str
     source_event_id: str
+    source_event: dict[str, Any]
 
 
 @dataclass(frozen=True)
@@ -68,6 +92,7 @@ class ReviewRepository:
 
     def write_packet(self, packet: dict[str, Any]) -> tuple[Path, str]:
         self.schemas.require("review-packet", packet)
+        _require_new_packet_contract(packet)
         digest = canonical_sha256(packet)
         return self._write_immutable("packets", packet["packet_id"], packet), digest
 
@@ -86,6 +111,34 @@ class ReviewRepository:
 
     def read_result(self, review_id: str, attempt: int) -> dict[str, Any]:
         return self._read("results", f"{review_id}-{attempt}", "review-result")
+
+    def read_verified_artifact(self, version: dict[str, Any]) -> bytes:
+        """Return an immutable artifact only after recorded hash and size verification."""
+
+        path = self.paths.ensure_runtime_write_target(
+            self.paths.artifact_root / "objects" / version["object_ref"]
+        )
+        content = path.read_bytes()
+        if (
+            len(content) != version["byte_count"]
+            or sha256_hex(content) != version["content_sha256"]
+        ):
+            raise ValueError("artifact object does not match recorded version")
+        return content
+
+    def read_verified_evidence(self, metadata: dict[str, Any]) -> bytes:
+        """Return an immutable evidence object only after metadata binding verification."""
+
+        path = self.paths.ensure_runtime_write_target(
+            self.paths.evidence_root / "objects" / metadata["object_ref"]
+        )
+        content = path.read_bytes()
+        if (
+            len(content) != metadata["byte_count"]
+            or sha256_hex(content) != metadata["content_sha256"]
+        ):
+            raise ValueError("evidence object does not match recorded metadata")
+        return content
 
     def _read(self, category: str, stem: str, schema: str) -> dict[str, Any]:
         path = self.paths.review_root / category / f"{stem}.json"
@@ -141,13 +194,25 @@ def resolve_review_target(
             and event["event_type"] in {"recommendation.issued", "recommendation.revised"}
             and payload.get("recommendation_id") == target_ref
         ):
-            return ReviewTarget(target_type, target_ref, event["integrity"]["event_sha256"], event["event_id"])
+            return ReviewTarget(
+                target_type,
+                target_ref,
+                event["integrity"]["event_sha256"],
+                event["event_id"],
+                event,
+            )
         if (
             target_type == "checkpoint"
             and event["event_type"] == "checkpoint.recorded"
             and payload.get("checkpoint_id") == target_ref
         ):
-            return ReviewTarget(target_type, target_ref, event["integrity"]["event_sha256"], event["event_id"])
+            return ReviewTarget(
+                target_type,
+                target_ref,
+                event["integrity"]["event_sha256"],
+                event["event_id"],
+                event,
+            )
         if (
             target_type == "artifact_version"
             and event["event_type"] == "artifact.version_created"
@@ -158,6 +223,7 @@ def resolve_review_target(
                 target_ref,
                 payload["version"]["content_sha256"],
                 event["event_id"],
+                event,
             )
     raise ValidationError(
         [Issue(ErrorCode.EVENT_REFERENCE_MISSING, "$target_ref", "review target is absent from session")]
@@ -174,6 +240,8 @@ def build_review_packet(
     schemas: SchemaRegistry,
     created_at: datetime | None = None,
     rubric_id: str = "semantic-coherence-v1",
+    artifact_loader: Callable[[dict[str, Any]], bytes] | None = None,
+    evidence_loader: Callable[[dict[str, Any]], bytes] | None = None,
 ) -> dict[str, Any]:
     """Build a fixed packet and withhold all substantive material above synthetic-safe sensitivity."""
 
@@ -185,15 +253,35 @@ def build_review_packet(
     target = resolve_review_target(events, session_id, target_type, target_ref)
     labels = sorted({event["sensitivity"] for event in session_events})
     reviewable = set(labels).issubset(REVIEWABLE_SENSITIVITY)
-    question = _primary_question(session_events)
+    omissions: list[dict[str, str]] = []
+    if reviewable:
+        question = _bounded_question(session_events, omissions)
+        target_content = _target_content(target, omissions, artifact_loader)
+        context_records = _context_records(session_events, target.source_event_id, omissions)
+        evidence = _evidence_records(session_events, omissions, evidence_loader)
+    else:
+        question = "Withheld by sensitivity policy."
+        target_content = _omitted_target_content(target, "withheld")
+        context_records = []
+        evidence = []
+        omissions.append(
+            {
+                "category": "sensitivity",
+                "ref": session_id,
+                "reason": "session contains material above synthetic-safe sensitivity",
+            }
+        )
     subject: dict[str, Any] = {
-        "primary_question": question if reviewable else "Withheld by sensitivity policy.",
+        "primary_question": question,
         "target_type": target.target_type,
         "target_ref": target.target_ref,
         "target_sha256": target.target_sha256,
-        "recommendations": _records(session_events, "recommendation") if reviewable else [],
-        "assumptions": _records(session_events, "assumption") if reviewable else [],
-        "alternatives": _records(session_events, "alternative") if reviewable else [],
+        "recommendations": [],
+        "assumptions": [],
+        "alternatives": [],
+        "target_content": target_content,
+        "context_records": context_records,
+        "evidence": evidence,
     }
     packet = {
         "schema_version": SCHEMA_VERSION,
@@ -211,6 +299,10 @@ def build_review_packet(
             "reviewable": reviewable,
             "withheld_source_event_ids": [] if reviewable else [event["event_id"] for event in session_events],
         },
+        "reviewability": {
+            "complete": reviewable and not omissions,
+            "omissions": omissions,
+        },
         "policy": {
             "tools_available": False,
             "write_authority": False,
@@ -219,6 +311,7 @@ def build_review_packet(
         },
     }
     schemas.require("review-packet", packet)
+    _require_new_packet_contract(packet)
     return packet
 
 
@@ -254,6 +347,8 @@ class SemanticReviewCoordinator:
             target_ref=target_ref,
             schemas=self.schemas,
             created_at=self.clock(),
+            artifact_loader=self.repository.read_verified_artifact,
+            evidence_loader=self.repository.read_verified_evidence,
         )
         _, digest = self.repository.write_packet(packet)
         return packet, digest
@@ -268,11 +363,12 @@ class SemanticReviewCoordinator:
     ) -> ReviewAttempt:
         """Call the pure reviewer; convert unavailability to a non-passing immutable result."""
 
+        self.schemas.require("review-packet", packet)
         target_sha256 = packet["subject"]["target_sha256"]
-        if not packet["sensitivity"]["reviewable"]:
+        if not _packet_is_complete(packet):
             status, reason, findings = (
                 "unavailable",
-                "review packet withheld by sensitivity policy",
+                "review packet is incomplete or withheld",
                 [],
             )
         else:
@@ -401,6 +497,252 @@ def _records(events: list[dict[str, Any]], prefix: str) -> list[dict[str, Any]]:
     ]
 
 
+def _bounded_question(events: list[dict[str, Any]], omissions: list[dict[str, str]]) -> str:
+    question = _primary_question(events)
+    if len(question.encode("utf-8")) <= MAX_PRIMARY_QUESTION_BYTES:
+        return question
+    omissions.append(
+        {
+            "category": "primary_question",
+            "ref": events[0]["session_id"],
+            "reason": f"question exceeds {MAX_PRIMARY_QUESTION_BYTES} byte limit",
+        }
+    )
+    return "Primary question omitted because it exceeds the packet limit."
+
+
+def _target_content(
+    target: ReviewTarget,
+    omissions: list[dict[str, str]],
+    artifact_loader: Callable[[dict[str, Any]], bytes] | None,
+) -> dict[str, Any]:
+    if target.target_type != "artifact_version":
+        payload = target.source_event["payload"]
+        try:
+            content = canonical_bytes(payload)
+        except ValidationError:
+            return _target_omission(target, omissions, "target event payload is not canonical")
+        if len(content) > MAX_TARGET_EVENT_BYTES:
+            return _target_omission(
+                target, omissions, f"target payload exceeds {MAX_TARGET_EVENT_BYTES} byte limit"
+            )
+        if canonical_sha256(payload) != target.source_event["integrity"]["payload_sha256"]:
+            return _target_omission(target, omissions, "target event payload hash does not match")
+        return {
+            "status": "present",
+            "representation": "event_payload",
+            "source_event_id": target.source_event_id,
+            "content_sha256": target.source_event["integrity"]["payload_sha256"],
+            "byte_count": len(content),
+            "content": payload,
+            "text": None,
+        }
+
+    version = target.source_event["payload"]["version"]
+    if version["byte_count"] > MAX_ARTIFACT_BYTES:
+        return _target_omission(
+            target, omissions, f"artifact exceeds {MAX_ARTIFACT_BYTES} byte limit"
+        )
+    if artifact_loader is None:
+        return _target_omission(target, omissions, "trusted artifact loader is unavailable")
+    try:
+        content = artifact_loader(version)
+        text = content.decode("utf-8")
+    except (OSError, UnicodeDecodeError, ValueError, KeyError):
+        return _target_omission(target, omissions, "artifact is unavailable, invalid, or not UTF-8")
+    if len(content) != version["byte_count"] or sha256_hex(content) != target.target_sha256:
+        return _target_omission(target, omissions, "artifact hash or byte count does not match")
+    return {
+        "status": "present",
+        "representation": "artifact_text",
+        "source_event_id": target.source_event_id,
+        "content_sha256": target.target_sha256,
+        "byte_count": len(content),
+        "content": None,
+        "text": text,
+    }
+
+
+def _target_omission(
+    target: ReviewTarget, omissions: list[dict[str, str]], reason: str
+) -> dict[str, Any]:
+    omissions.append({"category": "target_content", "ref": target.target_ref, "reason": reason})
+    return _omitted_target_content(target, "omitted")
+
+
+def _omitted_target_content(target: ReviewTarget, status: str) -> dict[str, Any]:
+    return {
+        "status": status,
+        "representation": "none",
+        "source_event_id": target.source_event_id,
+        "content_sha256": None,
+        "byte_count": None,
+        "content": None,
+        "text": None,
+    }
+
+
+def _context_records(
+    events: list[dict[str, Any]], target_event_id: str, omissions: list[dict[str, str]]
+) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for event in events:
+        if event["event_id"] == target_event_id or event["event_type"] not in CONTEXT_EVENT_TYPES:
+            continue
+        if len(records) >= MAX_CONTEXT_RECORDS:
+            omissions.append(
+                {
+                    "category": "context_records",
+                    "ref": event["event_id"],
+                    "reason": f"context exceeds {MAX_CONTEXT_RECORDS} record limit",
+                }
+            )
+            break
+        payload = event["payload"]
+        try:
+            encoded = canonical_bytes(payload)
+        except ValidationError:
+            omissions.append(
+                {
+                    "category": "context_records",
+                    "ref": event["event_id"],
+                    "reason": "context payload is not canonical",
+                }
+            )
+            continue
+        if len(encoded) > MAX_CONTEXT_RECORD_BYTES:
+            omissions.append(
+                {
+                    "category": "context_records",
+                    "ref": event["event_id"],
+                    "reason": f"context payload exceeds {MAX_CONTEXT_RECORD_BYTES} byte limit",
+                }
+            )
+            continue
+        expected = event["integrity"].get("payload_sha256")
+        if canonical_sha256(payload) != expected:
+            omissions.append(
+                {
+                    "category": "context_records",
+                    "ref": event["event_id"],
+                    "reason": "context payload hash does not match",
+                }
+            )
+            continue
+        records.append(
+            {
+                "event_id": event["event_id"],
+                "event_type": event["event_type"],
+                "payload": payload,
+                "payload_sha256": expected,
+                "byte_count": len(encoded),
+            }
+        )
+    return records
+
+
+def _evidence_records(
+    events: list[dict[str, Any]],
+    omissions: list[dict[str, str]],
+    evidence_loader: Callable[[dict[str, Any]], bytes] | None,
+) -> list[dict[str, Any]]:
+    evidence: list[dict[str, Any]] = []
+    total_bytes = 0
+    for event in events:
+        if event["event_type"] != "evidence.registered":
+            continue
+        metadata = event["payload"].get("metadata", {})
+        evidence_id = str(metadata.get("evidence_id", event["event_id"]))
+        expected_size = metadata.get("byte_count")
+        if len(evidence) >= MAX_EVIDENCE_RECORDS:
+            omissions.append(
+                {
+                    "category": "evidence",
+                    "ref": evidence_id,
+                    "reason": f"evidence exceeds {MAX_EVIDENCE_RECORDS} record limit",
+                }
+            )
+            continue
+        if not isinstance(expected_size, int) or expected_size < 0:
+            omissions.append(
+                {"category": "evidence", "ref": evidence_id, "reason": "invalid evidence byte count"}
+            )
+            continue
+        if expected_size > MAX_EVIDENCE_BYTES or total_bytes + expected_size > MAX_EVIDENCE_TOTAL_BYTES:
+            omissions.append(
+                {
+                    "category": "evidence",
+                    "ref": evidence_id,
+                    "reason": "evidence exceeds packet byte limit",
+                }
+            )
+            continue
+        if evidence_loader is None:
+            omissions.append(
+                {"category": "evidence", "ref": evidence_id, "reason": "trusted evidence loader is unavailable"}
+            )
+            continue
+        try:
+            content = evidence_loader(metadata)
+            text = content.decode("utf-8")
+        except (OSError, UnicodeDecodeError, ValueError, KeyError):
+            omissions.append(
+                {"category": "evidence", "ref": evidence_id, "reason": "evidence is unavailable, invalid, or not UTF-8"}
+            )
+            continue
+        if len(content) != expected_size or sha256_hex(content) != metadata.get("content_sha256"):
+            omissions.append(
+                {"category": "evidence", "ref": evidence_id, "reason": "evidence hash or byte count does not match"}
+            )
+            continue
+        total_bytes += len(content)
+        evidence.append(
+            {
+                "evidence_id": evidence_id,
+                "source_event_id": event["event_id"],
+                "content_type": str(metadata.get("content_type", "application/octet-stream")),
+                "content_sha256": metadata["content_sha256"],
+                "byte_count": len(content),
+                "text": text,
+            }
+        )
+    return evidence
+
+
+def _packet_is_complete(packet: dict[str, Any]) -> bool:
+    reviewability = packet.get("reviewability")
+    return (
+        isinstance(reviewability, dict)
+        and reviewability.get("complete") is True
+        and reviewability.get("omissions") == []
+        and packet["sensitivity"]["reviewable"] is True
+    )
+
+
+def _require_new_packet_contract(packet: dict[str, Any]) -> None:
+    reviewability = packet.get("reviewability")
+    issues: list[Issue] = []
+    if not isinstance(reviewability, dict):
+        issues.append(Issue(ErrorCode.REVIEW_RESULT_INVALID, "$reviewability", "bounded packet contract missing"))
+    else:
+        omissions = reviewability.get("omissions")
+        complete = reviewability.get("complete")
+        expected_complete = packet["sensitivity"]["reviewable"] and omissions == []
+        if complete is not expected_complete:
+            issues.append(
+                Issue(ErrorCode.REVIEW_RESULT_INVALID, "$reviewability", "completeness does not match omissions")
+            )
+        target = packet["subject"].get("target_content")
+        if not isinstance(target, dict):
+            issues.append(Issue(ErrorCode.REVIEW_RESULT_INVALID, "$subject/target_content", "target content missing"))
+        elif complete and target.get("status") != "present":
+            issues.append(
+                Issue(ErrorCode.REVIEW_RESULT_INVALID, "$subject/target_content", "complete packet omits target")
+            )
+    if issues:
+        raise ValidationError(issues)
+
+
 def _validate_result_semantics(packet: dict[str, Any], result: dict[str, Any]) -> None:
     issues: list[Issue] = []
     if result["packet_sha256"] != canonical_sha256(packet):
@@ -411,6 +753,10 @@ def _validate_result_semantics(packet: dict[str, Any], result: dict[str, Any]) -
         issues.append(Issue(ErrorCode.REVIEW_RESULT_INVALID, "$findings", "passing result cannot contain findings"))
     if result["status"] == "findings" and not result["findings"]:
         issues.append(Issue(ErrorCode.REVIEW_RESULT_INVALID, "$findings", "finding result requires findings"))
+    if result["status"] == "pass" and not _packet_is_complete(packet):
+        issues.append(
+            Issue(ErrorCode.REVIEW_RESULT_INVALID, "$status", "incomplete packet cannot pass review")
+        )
     packet_sources = set(packet["source_event_ids"])
     for finding in result["findings"]:
         if not set(finding["source_event_ids"]).issubset(packet_sources):

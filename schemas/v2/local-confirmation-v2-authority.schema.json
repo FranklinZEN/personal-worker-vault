@@ -1,0 +1,18 @@
+{
+  "$id": "vault-next://schemas/v2/local-confirmation-v2-authority",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "algorithm": {"const": "ed25519", "type": "string"},
+    "authority_id": {"const": "vault-next-local-confirmation/v2", "type": "string"},
+    "bundle_id": {"pattern": "^bundle_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "key_id": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "keychain_service_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "public_key_base64": {"minLength": 1, "pattern": "^[A-Za-z0-9+/]+={0,2}$", "type": "string"},
+    "schema_version": {"const": "2.0", "type": "string"},
+    "status": {"enum": ["active", "revoked"], "type": "string"}
+  },
+  "required": ["schema_version", "authority_id", "bundle_id", "algorithm", "key_id", "public_key_base64", "keychain_service_sha256", "status"],
+  "title": "Vault Next durable local confirmation v2 authority",
+  "type": "object"
+}

@@ -9,6 +9,7 @@ from datetime import timedelta
 from pathlib import Path
 
 from vault_next.canonical import canonical_bytes, canonical_sha256, sha256_hex
+from vault_next.contracts import OwnerReceipt
 from vault_next.dry_run import SyntheticSnapshotItem, plan_synthetic_dry_run
 from vault_next.errors import ErrorCode, LedgerCorruptionError, ValidationError
 from vault_next.fixtures import run_synthetic_session
@@ -27,7 +28,7 @@ def audit_policy(result: object) -> dict[str, object]:
 def recovery_authorization(
     harness: Harness,
     partition: Path,
-) -> tuple[Proposal, dict[str, Approval]]:
+) -> tuple[Proposal, dict[str, Approval], dict[str, OwnerReceipt]]:
     base = harness.semantic.recovery_proposal(partition)
     approval_id = harness.ids.new("approval")
     approval = Approval(
@@ -40,7 +41,8 @@ def recovery_authorization(
         "synthetic-owner",
     )
     proposal = Proposal(**{**base.__dict__, "approval_ref": approval_id})
-    return proposal, {approval_id: approval}
+    receipt = harness.issue_fixture_receipt(approval)
+    return proposal, {approval_id: approval}, {approval_id: receipt}
 
 
 class Phase1AcceptanceTests(unittest.TestCase):
@@ -157,6 +159,7 @@ class Phase1AcceptanceTests(unittest.TestCase):
             self.harness.paths,
             self.harness.schemas,
             external_mode="requires_owner_approval",
+            receipt_verifier=self.harness.receipt_verifier,
         )
         proposal_a = Proposal(
             operation_class="transmit",
@@ -175,10 +178,12 @@ class Phase1AcceptanceTests(unittest.TestCase):
             "owner",
         )
         approved_a = Proposal(**{**proposal_a.__dict__, "approval_ref": approval_id})
+        receipt = self.harness.issue_fixture_receipt(approval)
         self.assertEqual(
             policy.evaluate(
                 approved_a,
                 approvals={approval_id: approval},
+                receipts={approval_id: receipt},
                 now=self.harness.current,
             ).result,
             "allow",
@@ -237,12 +242,13 @@ class Phase1AcceptanceTests(unittest.TestCase):
         self.assertFalse(scan.is_valid)
         with self.assertRaises(LedgerCorruptionError):
             self.harness.semantic.read_all()
-        proposal, approvals = recovery_authorization(self.harness, partition)
+        proposal, approvals, receipts = recovery_authorization(self.harness, partition)
         recovery = self.harness.semantic.recover(
             partition,
             proposal=proposal,
             policy=self.harness.policy,
             approvals=approvals,
+            receipts=receipts,
             now=self.harness.current,
         )
         self.assertTrue(recovery.recovered)
@@ -268,12 +274,13 @@ class Phase1AcceptanceTests(unittest.TestCase):
         scan = self.harness.semantic.scan(partition)
         self.assertFalse(scan.is_valid)
         self.assertEqual(scan.valid_byte_count, len(first_line))
-        proposal, approvals = recovery_authorization(self.harness, partition)
+        proposal, approvals, receipts = recovery_authorization(self.harness, partition)
         recovery = self.harness.semantic.recover(
             partition,
             proposal=proposal,
             policy=self.harness.policy,
             approvals=approvals,
+            receipts=receipts,
             now=self.harness.current,
         )
         self.assertTrue(recovery.recovered)
@@ -286,7 +293,7 @@ class Phase1AcceptanceTests(unittest.TestCase):
         with partition.open("ab") as stream:
             stream.write(b'{"partial":')
             stream.flush()
-        proposal, approvals = recovery_authorization(self.harness, partition)
+        proposal, approvals, receipts = recovery_authorization(self.harness, partition)
         with partition.open("ab") as stream:
             stream.write(b"changed")
             stream.flush()
@@ -296,6 +303,7 @@ class Phase1AcceptanceTests(unittest.TestCase):
                 proposal=proposal,
                 policy=self.harness.policy,
                 approvals=approvals,
+                receipts=receipts,
                 now=self.harness.current,
             )
         self.assertEqual(caught.exception.issues[0].code, ErrorCode.APPROVAL_DIGEST_MISMATCH)

@@ -1,0 +1,19 @@
+{
+  "$id": "vault-next://schemas/v3/work-transaction-manifest",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "affected_case_ids": {"items": {"pattern": "^case_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+    "compatibility": {"additionalProperties": false, "properties": {"minimum_reader_version": {"pattern": "^[0-9]+[.][0-9]+[.][0-9]+$", "type": "string"}, "minimum_semantic_schema_version": {"const": "3.0", "type": "string"}}, "required": ["minimum_semantic_schema_version", "minimum_reader_version"], "type": "object"},
+    "expires_at": {"format": "date-time", "type": "string"},
+    "idempotency_key": {"minLength": 1, "maxLength": 256, "type": "string"},
+    "manifest_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "operations": {"items": {"additionalProperties": false, "properties": {"case_id": {"pattern": "^case_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}, "expected_revision": {"type": "integer"}, "next_state": {"additionalProperties": false, "properties": {"blocker": {"type": ["string", "null"]}, "due_on": {"type": ["string", "null"]}, "next_review_on": {"type": ["string", "null"]}, "priority": {"type": ["string", "null"]}, "source_kind": {"enum": ["owner_instruction", "system_suggestion"], "type": "string"}, "statement": {"minLength": 1, "type": "string"}, "status": {"enum": ["proposed", "open", "in_progress", "waiting", "done", "cancelled"], "type": "string"}}, "required": ["statement", "status", "source_kind", "priority", "due_on", "next_review_on", "blocker"], "type": "object"}, "operation": {"enum": ["record", "status_change"], "type": "string"}, "selection_binding": {"type": ["object", "null"]}, "session_id": {"pattern": "^session_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}, "work_item_id": {"pattern": "^work_item_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}}, "required": ["case_id", "session_id", "work_item_id", "expected_revision", "operation", "next_state", "selection_binding"], "type": "object"}, "minItems": 1, "type": "array"},
+    "request_id": {"pattern": "^request_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "schema_version": {"const": "3.0", "type": "string"},
+    "transaction_id": {"pattern": "^work_transaction_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}
+  },
+  "required": ["schema_version", "transaction_id", "request_id", "idempotency_key", "affected_case_ids", "operations", "expires_at", "compatibility", "manifest_digest"],
+  "title": "Vault Next immutable global work transaction manifest",
+  "type": "object"
+}

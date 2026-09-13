@@ -1,0 +1,42 @@
+{
+  "$id": "vault-next://schemas/v1/s3-investigation-result",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "analysis_text": {"maxLength": 16000, "minLength": 1, "type": ["string", "null"]},
+    "artifact_version_ref": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact_id": {"pattern": "^artifact_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+        "content_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+        "event_id": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+        "version_id": {"pattern": "^artifact_version_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}
+      },
+      "required": ["artifact_id", "version_id", "content_sha256", "event_id"],
+      "type": ["object", "null"]
+    },
+    "checkpoint_ref": {
+      "additionalProperties": false,
+      "properties": {
+        "checkpoint_id": {"pattern": "^checkpoint_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+        "event_id": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+        "open_questions": {"items": {"maxLength": 1000, "minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+        "source_watermark": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+        "state": {"additionalProperties": true, "type": "object"},
+        "summary": {"maxLength": 8000, "minLength": 1, "type": "string"}
+      },
+      "required": ["checkpoint_id", "event_id", "summary", "state", "open_questions", "source_watermark"],
+      "type": ["object", "null"]
+    },
+    "context_refs": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+    "durable_output_refs": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+    "operation": {"enum": ["investigate", "pause", "resume", "revise"], "type": "string"},
+    "result": {"type": "object"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "source_watermark": {"pattern": "^(GENESIS|[0-9a-f]{64})$", "type": "string"},
+    "topic": {"maxLength": 4000, "minLength": 1, "type": ["string", "null"]}
+  },
+  "required": ["schema_version", "result", "operation", "topic", "analysis_text", "context_refs", "source_watermark", "durable_output_refs", "checkpoint_ref", "artifact_version_ref"],
+  "title": "Vault Next S3-A structured investigation result",
+  "type": "object"
+}

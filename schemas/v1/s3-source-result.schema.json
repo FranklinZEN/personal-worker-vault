@@ -1,0 +1,16 @@
+{
+  "$id": "vault-next://schemas/v1/s3-source-result",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "extraction": {"type": ["object", "null"]},
+    "index": {"type": ["object", "null"]},
+    "operation": {"enum": ["register", "extract", "rebuild", "retrieve", "cite"], "type": "string"},
+    "result": {"type": "object"},
+    "retrieval_packet": {"type": ["object", "null"]},
+    "source_receipt": {"type": ["object", "null"]},
+    "source_watermark": {"pattern": "^[0-9a-f]{64}$", "type": ["string", "null"]}
+  },
+  "required": ["result", "operation", "source_watermark", "source_receipt", "extraction", "index", "retrieval_packet"],
+  "type": "object"
+}

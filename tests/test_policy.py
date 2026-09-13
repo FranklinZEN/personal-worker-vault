@@ -36,9 +36,11 @@ class PolicyTests(unittest.TestCase):
             "owner",
         )
         with_ref = Proposal(**{**proposal.__dict__, "approval_ref": approval_id})
+        receipt = self.harness.issue_fixture_receipt(approval)
         result = self.harness.policy.evaluate(
             with_ref,
             approvals={approval_id: approval},
+            receipts={approval_id: receipt},
             now=self.harness.current,
         )
         self.assertEqual(result.result, "allow")

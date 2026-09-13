@@ -30,19 +30,26 @@ class CanonicalContractTests(unittest.TestCase):
         self.assertEqual(len(encode_ulid(1_000, b"\0" * 10)), 26)
 
     def test_every_checked_in_schema_uses_supported_keywords(self) -> None:
-        for path in sorted(SCHEMA_ROOT.rglob("*.schema.json")):
-            schema = load_schema(path)
-            self.assertEqual(validate({}, schema)[0].code, ErrorCode.SCHEMA_REQUIRED)
+        for schema_root in sorted(SCHEMA_ROOT.parent.glob("v[0-9]*")):
+            for path in sorted(schema_root.rglob("*.schema.json")):
+                schema = load_schema(path)
+                self.assertEqual(validate({}, schema)[0].code, ErrorCode.SCHEMA_REQUIRED)
 
     def test_every_active_event_type_has_a_payload_schema(self) -> None:
-        event_schema = load_schema(SCHEMA_ROOT / "event.schema.json")
-        event_types = event_schema["properties"]["event_type"]["enum"]
-        for event_type in event_types:
-            payload_name = event_type.replace(".", "-").replace("_", "-")
-            self.assertTrue(
-                (SCHEMA_ROOT / "events" / f"{payload_name}.schema.json").is_file(),
-                event_type,
+        for schema_root in sorted(SCHEMA_ROOT.parent.glob("v[0-9]*")):
+            event_schema = load_schema(schema_root / "event.schema.json")
+            event_contract = event_schema["properties"]["event_type"]
+            event_types = (
+                event_contract["enum"]
+                if "enum" in event_contract
+                else [event_contract["const"]]
             )
+            for event_type in event_types:
+                payload_name = event_type.replace(".", "-").replace("_", "-")
+                self.assertTrue(
+                    (schema_root / "events" / f"{payload_name}.schema.json").is_file(),
+                    event_type,
+                )
 
     def test_unknown_schema_keyword_fails_closed(self) -> None:
         with TemporaryDirectory() as directory:

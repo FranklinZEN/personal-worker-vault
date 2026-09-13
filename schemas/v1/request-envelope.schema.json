@@ -1,0 +1,21 @@
+{
+  "$id": "vault-next://schemas/v1/request-envelope",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "capability_version": {"pattern": "^[0-9]+[.][0-9]+$", "type": "string"},
+    "function_ids": {"items": {"pattern": "^function_[a-z0-9_]+$", "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+    "idempotency_key": {"minLength": 1, "type": "string"},
+    "intent": {"minLength": 1, "type": "string"},
+    "mode": {"enum": ["read", "propose", "apply"], "type": "string"},
+    "owner_receipt_ref": {"pattern": "^receipt_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": ["string", "null"]},
+    "policy_version": {"pattern": "^[0-9]+[.][0-9]+$", "type": "string"},
+    "request_id": {"pattern": "^request_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "target_refs": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+    "target_versions": {"items": {"additionalProperties": false, "properties": {"digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"}, "ref": {"minLength": 1, "type": "string"}}, "required": ["ref", "digest"], "type": "object"}, "type": "array", "uniqueItems": true}
+  },
+  "required": ["schema_version", "request_id", "idempotency_key", "intent", "function_ids", "mode", "target_refs", "target_versions", "policy_version", "capability_version", "owner_receipt_ref"],
+  "title": "Vault Next bounded request envelope",
+  "type": "object"
+}

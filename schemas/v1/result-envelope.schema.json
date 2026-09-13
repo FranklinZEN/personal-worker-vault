@@ -1,0 +1,20 @@
+{
+  "$id": "vault-next://schemas/v1/result-envelope",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "committed_watermark": {"pattern": "^(GENESIS|[0-9a-f]{64})$", "type": ["string", "null"]},
+    "continuation_ref": {"minLength": 1, "type": ["string", "null"]},
+    "function_results": {"items": {"additionalProperties": false, "properties": {"function_id": {"pattern": "^function_[a-z0-9_]+$", "type": "string"}, "status": {"enum": ["complete", "pending", "failed", "unavailable", "needs_input"], "type": "string"}}, "required": ["function_id", "status"], "type": "object"}, "minItems": 1, "type": "array", "uniqueItems": true},
+    "limits": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+    "pending_refs": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+    "receipt_ref": {"pattern": "^receipt_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": ["string", "null"]},
+    "request_id": {"pattern": "^request_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "sources": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+    "status": {"enum": ["complete", "pending", "committed", "failed", "unavailable", "needs_input"], "type": "string"}
+  },
+  "required": ["schema_version", "request_id", "status", "function_results", "receipt_ref", "committed_watermark", "pending_refs", "sources", "limits", "continuation_ref"],
+  "title": "Vault Next bounded result envelope",
+  "type": "object"
+}

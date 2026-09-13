@@ -15,6 +15,7 @@
     "created_at": {"format": "date-time", "type": "string"},
     "media_type": {"minLength": 1, "type": "string"},
     "object_ref": {"pattern": "^sha256/[0-9a-f]{2}/[0-9a-f]{64}$", "type": "string"},
+    "idempotency_key": {"minLength": 1, "type": "string"},
     "prior_version_id": {
       "pattern": "^artifact_version_[0-7][0-9A-HJKMNP-TV-Z]{25}$",
       "type": ["string", "null"]
@@ -29,6 +30,8 @@
       "type": "object"
     },
     "purpose": {"minLength": 1, "type": "string"},
+    "request_id": {"pattern": "^request_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "request_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
     "schema_version": {"const": "1.0", "type": "string"},
     "source_event_ids": {
       "items": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},

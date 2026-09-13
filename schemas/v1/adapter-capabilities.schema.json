@@ -1,0 +1,17 @@
+{
+  "$id": "vault-next://schemas/v1/adapter-capabilities",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "adapter_id": {"minLength": 1, "type": "string"},
+    "allowed_effects": {"items": {"enum": ["read", "propose", "commit"], "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+    "capability_version": {"pattern": "^[0-9]+[.][0-9]+$", "type": "string"},
+    "direct_entry": {"type": "boolean"},
+    "owner_receipt_verification": {"enum": ["unavailable", "verified"], "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "supported_function_ids": {"items": {"pattern": "^function_[a-z0-9_]+$", "type": "string"}, "type": "array", "uniqueItems": true}
+  },
+  "required": ["schema_version", "adapter_id", "capability_version", "direct_entry", "supported_function_ids", "allowed_effects", "owner_receipt_verification"],
+  "title": "Vault Next adapter capabilities",
+  "type": "object"
+}

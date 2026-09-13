@@ -8,11 +8,13 @@ from typing import Any, Callable
 
 from vault_next.canonical import canonical_sha256
 from vault_next import __version__
+from vault_next.errors import ErrorCode, Issue, ValidationError
 from vault_next.ids import DEFAULT_FACTORY, ULIDFactory
 from vault_next.schema import load_schema, require_valid
 from vault_next.schema import validate as validate_schema
 
 SCHEMA_VERSION = "1.0"
+SUPPORTED_SCHEMA_VERSIONS = frozenset({"1.0", "2.0", "3.0"})
 RUNTIME_ACTOR = {"type": "runtime", "id": f"vault-next-runtime/{__version__}"}
 AUDIT_ACTOR = {"id": "vault-next-runtime", "version": __version__}
 
@@ -22,20 +24,73 @@ class SchemaRegistry:
 
     def __init__(self, schema_root: Path):
         self.schema_root = schema_root
-        self._cache: dict[str, dict[str, Any]] = {}
+        self._cache: dict[tuple[str, str], dict[str, Any]] = {}
 
-    def get(self, name: str) -> dict[str, Any]:
-        if name not in self._cache:
-            self._cache[name] = load_schema(self.schema_root / f"{name}.schema.json")
-        return self._cache[name]
+    def get(self, name: str, *, schema_version: str = SCHEMA_VERSION) -> dict[str, Any]:
+        key = (schema_version, name)
+        if key not in self._cache:
+            root = self._root_for_version(schema_version)
+            if root is None:
+                raise ValidationError(
+                    [
+                        Issue(
+                            ErrorCode.SCHEMA_VERSION_UNSUPPORTED,
+                            "$/schema_version",
+                            f"unsupported schema version: {schema_version}",
+                        )
+                    ]
+                )
+            self._cache[key] = load_schema(root / f"{name}.schema.json")
+        return self._cache[key]
 
-    def require(self, name: str, record: dict[str, Any]) -> None:
-        require_valid(record, self.get(name))
+    def require(
+        self, name: str, record: dict[str, Any], *, schema_version: str = SCHEMA_VERSION
+    ) -> None:
+        require_valid(record, self.get(name, schema_version=schema_version))
 
-    def issues(self, name: str, record: dict[str, Any]) -> tuple[Any, ...]:
+    def issues(
+        self, name: str, record: dict[str, Any], *, schema_version: str = SCHEMA_VERSION
+    ) -> tuple[Any, ...]:
         """Return stable structural issues for one named record contract."""
 
-        return validate_schema(record, self.get(name))
+        return validate_schema(record, self.get(name, schema_version=schema_version))
+
+    def require_for_record(self, name: str, record: dict[str, Any]) -> None:
+        """Validate an envelope using its declared schema version without future fallback."""
+
+        version = record.get("schema_version")
+        if not isinstance(version, str) or self._root_for_version(version) is None:
+            raise ValidationError(
+                [
+                    Issue(
+                        ErrorCode.SCHEMA_VERSION_UNSUPPORTED,
+                        "$/schema_version",
+                        f"unsupported schema version: {version!r}",
+                    )
+                ]
+            )
+        self.require(name, record, schema_version=version)
+
+    def issues_for_record(self, name: str, record: dict[str, Any]) -> tuple[Any, ...]:
+        """Return version-selection or structural issues for one versioned envelope."""
+
+        version = record.get("schema_version")
+        if not isinstance(version, str) or self._root_for_version(version) is None:
+            return (
+                Issue(
+                    ErrorCode.SCHEMA_VERSION_UNSUPPORTED,
+                    "$/schema_version",
+                    f"unsupported schema version: {version!r}",
+                ),
+            )
+        return self.issues(name, record, schema_version=version)
+
+    def _root_for_version(self, schema_version: str) -> Path | None:
+        if schema_version not in SUPPORTED_SCHEMA_VERSIONS:
+            return None
+        major = schema_version.split(".", maxsplit=1)[0]
+        root = self.schema_root.parent / f"v{major}"
+        return root if root.is_dir() else None
 
 
 def aware_utc_now() -> datetime:
@@ -55,7 +110,7 @@ def timestamp(value: datetime) -> str:
 def build_event(
     *,
     event_type: str,
-    case_id: str,
+    case_id: str | None,
     session_id: str | None,
     payload: dict[str, Any],
     actor: dict[str, str] | None = None,
@@ -65,6 +120,7 @@ def build_event(
     causation_event_id: str | None = None,
     sensitivity: str = "none",
     approval_ref: str | None = None,
+    schema_version: str = SCHEMA_VERSION,
     occurred_at: datetime | None = None,
     recorded_at: datetime | None = None,
     id_factory: ULIDFactory = DEFAULT_FACTORY,
@@ -74,7 +130,7 @@ def build_event(
     occurred = occurred_at or aware_utc_now()
     recorded = recorded_at or aware_utc_now()
     return {
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": schema_version,
         "event_id": id_factory.new("event"),
         "event_type": event_type,
         "occurred_at": timestamp(occurred),
@@ -111,6 +167,7 @@ def build_audit_record(
     semantic_event_refs: list[str] | None = None,
     output_refs: list[str] | None = None,
     error_code: str | None = None,
+    public_research_attempt: dict[str, Any] | None = None,
     attempted_at: datetime | None = None,
     id_factory: ULIDFactory = DEFAULT_FACTORY,
 ) -> dict[str, Any]:
@@ -129,6 +186,7 @@ def build_audit_record(
         "target_summary": target_summary,
         "input_digest": input_digest,
         "policy": policy,
+        "public_research_attempt": public_research_attempt,
         "attempt_status": attempt_status,
         "result": result,
         "output_refs": output_refs or [],

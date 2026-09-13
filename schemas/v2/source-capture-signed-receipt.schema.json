@@ -1,0 +1,22 @@
+{
+  "$id": "vault-next://schemas/v2/source-capture-signed-receipt",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "algorithm": {"const": "ed25519", "type": "string"},
+    "authority_id": {"const": "vault-next-local-confirmation/v2", "type": "string"},
+    "bundle_id": {"pattern": "^bundle_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "capture_manifest": {"additionalProperties": true, "type": "object"},
+    "capture_manifest_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "confirmation_display_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "confirmed_at": {"format": "date-time", "type": "string"},
+    "key_id": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "receipt_type": {"const": "source_capture", "type": "string"},
+    "schema_version": {"const": "2.0", "type": "string"},
+    "signature_base64": {"minLength": 1, "pattern": "^[A-Za-z0-9+/]+={0,2}$", "type": "string"},
+    "source_capture_receipt": {"additionalProperties": true, "type": "object"}
+  },
+  "required": ["schema_version", "receipt_type", "authority_id", "bundle_id", "algorithm", "key_id", "source_capture_receipt", "capture_manifest", "capture_manifest_digest", "confirmation_display_sha256", "confirmed_at", "signature_base64"],
+  "title": "Vault Next v2 signed source-capture receipt",
+  "type": "object"
+}

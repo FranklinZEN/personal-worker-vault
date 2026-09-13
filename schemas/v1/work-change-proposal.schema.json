@@ -1,0 +1,18 @@
+{
+  "$id": "vault-next://schemas/v1/work-change-proposal",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "batch_id": {"pattern": "^work_batch_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "case_id": {"pattern": "^case_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "expires_at": {"format": "date-time", "type": "string"},
+    "idempotency_key": {"minLength": 1, "type": "string"},
+    "operations": {"items": {"additionalProperties": false, "properties": {"expected_revision": {"type": "integer"}, "next_state": {"additionalProperties": false, "properties": {"blocker": {"type": ["string", "null"]}, "due_on": {"type": ["string", "null"]}, "next_review_on": {"type": ["string", "null"]}, "priority": {"type": ["string", "null"]}, "source_kind": {"enum": ["owner_instruction", "system_suggestion"], "type": "string"}, "statement": {"minLength": 1, "type": "string"}, "status": {"enum": ["proposed", "open", "in_progress", "waiting", "done", "cancelled"], "type": "string"}}, "required": ["statement", "status", "source_kind", "priority", "due_on", "next_review_on", "blocker"], "type": "object"}, "operation": {"enum": ["record", "status_change"], "type": "string"}, "work_item_id": {"pattern": "^work_item_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}}, "required": ["work_item_id", "expected_revision", "operation", "next_state"], "type": "object"}, "minItems": 1, "type": "array", "uniqueItems": true},
+    "proposal_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "request_id": {"pattern": "^request_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"}
+  },
+  "required": ["schema_version", "batch_id", "request_id", "idempotency_key", "case_id", "operations", "proposal_digest", "expires_at"],
+  "title": "Vault Next exact work-change proposal",
+  "type": "object"
+}

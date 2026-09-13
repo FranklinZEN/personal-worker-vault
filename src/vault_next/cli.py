@@ -35,6 +35,15 @@ def build_parser() -> argparse.ArgumentParser:
     commands.add_parser("synthetic-phase3a-run", help="run the synthetic P3A interaction proof")
     commands.add_parser("synthetic-phase4-run", help="run the synthetic Phase 4 projection proof")
     commands.add_parser("synthetic-phase5-run", help="run the synthetic Phase 5 review and evaluation proof")
+    commands.add_parser(
+        "synthetic-local-confirmation-proof",
+        help="run the interactive S1-D local confirmation proof",
+    )
+    transaction_proof = commands.add_parser(
+        "synthetic-work-transaction-confirmation-proof",
+        help="run the interactive S2-B two-case local confirmation proof",
+    )
+    transaction_proof.add_argument("--authority-root", type=Path, required=True)
     commands.add_parser("validate", help="validate semantic and operational ledgers")
     return parser
 
@@ -63,6 +72,22 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
     if args.command == "synthetic-phase5-run":
         result = run_synthetic_phase5(args.root, args.schema_root)
+        print(json.dumps(result.to_record(), indent=2, sort_keys=True))
+        return 0
+    if args.command == "synthetic-local-confirmation-proof":
+        from vault_next.local_confirmation import run_synthetic_local_confirmation_proof
+
+        result = run_synthetic_local_confirmation_proof(args.root, args.schema_root)
+        print(json.dumps(result.to_record(), indent=2, sort_keys=True))
+        return 0
+    if args.command == "synthetic-work-transaction-confirmation-proof":
+        from vault_next.local_confirmation_v2 import (
+            run_synthetic_work_transaction_confirmation_proof,
+        )
+
+        result = run_synthetic_work_transaction_confirmation_proof(
+            args.root, args.schema_root, args.authority_root
+        )
         print(json.dumps(result.to_record(), indent=2, sort_keys=True))
         return 0
 

@@ -1,0 +1,20 @@
+{
+  "$id": "vault-next://schemas/v2/source-capture-receipt",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "authority_id": {"const": "vault-next-local-confirmation/v2", "type": "string"},
+    "byte_count": {"type": "integer"},
+    "capture_id": {"pattern": "^source_capture_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "capture_manifest_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "content_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "expires_at": {"format": "date-time", "type": "string"},
+    "issued_at": {"format": "date-time", "type": "string"},
+    "purpose": {"const": "source_capture", "type": "string"},
+    "receipt_id": {"pattern": "^receipt_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "schema_version": {"const": "2.0", "type": "string"}
+  },
+  "required": ["schema_version", "receipt_id", "authority_id", "purpose", "capture_id", "capture_manifest_digest", "content_sha256", "byte_count", "issued_at", "expires_at"],
+  "title": "Vault Next v2 source-capture receipt envelope",
+  "type": "object"
+}

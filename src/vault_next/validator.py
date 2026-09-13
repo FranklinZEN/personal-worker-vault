@@ -72,6 +72,7 @@ class KernelValidator:
             events = self.semantic.read_all()
             operations = self.operational.read_all()
             issues.extend(self._cross_reference_issues(events, operations))
+            issues.extend(self._source_issues(events))
             projection_count, projection_issues = self._projection_issues(events)
             issues.extend(projection_issues)
             issues.extend(self._review_issues(events))
@@ -282,6 +283,92 @@ class KernelValidator:
                             ErrorCode.EVENT_REFERENCE_MISSING,
                             f"$operations/{operation_id}/semantic_event_refs",
                             "operational record references an unknown semantic event",
+                        )
+                    )
+        return issues
+
+    def _source_issues(self, events: list[dict[str, Any]]) -> list[Issue]:
+        """Recheck S3-B canonical source bytes and extractions from their receipts."""
+
+        issues: list[Issue] = []
+        source_events = [
+            event for event in events if event["event_type"] == "source.version_registered"
+        ]
+        by_version = {
+            event["payload"]["version"]["source_version_id"]: event
+            for event in source_events
+        }
+        content_by_version: dict[str, bytes] = {}
+        expected_refs: set[str] = set()
+        for event in source_events:
+            version = event["payload"]["version"]
+            object_ref = version["object_ref"]
+            expected_refs.add(object_ref)
+            path = self.paths.source_root / "objects" / object_ref
+            try:
+                if path.is_symlink():
+                    raise ValueError("source object symlink is prohibited")
+                path = self.paths.ensure_runtime_write_target(path)
+                content = path.read_bytes()
+                if (
+                    sha256_hex(content) != version["content_sha256"]
+                    or len(content) != version["byte_count"]
+                ):
+                    raise ValueError("source object hash or size mismatch")
+                content_by_version[version["source_version_id"]] = content
+            except (OSError, ValueError, ValidationError) as exc:
+                issues.append(
+                    Issue(
+                        ErrorCode.SOURCE_OBJECT_INVALID,
+                        object_ref,
+                        f"source object validation failed: {type(exc).__name__}",
+                    )
+                )
+
+        for event in events:
+            if event["event_type"] != "source.extraction_recorded":
+                continue
+            extraction = event["payload"]["extraction"]
+            source = by_version.get(extraction["source_version_id"])
+            content = content_by_version.get(extraction["source_version_id"])
+            if source is None or content is None:
+                continue
+            try:
+                if source["event_id"] != extraction["registration_event_id"]:
+                    raise ValueError("extraction source receipt mismatch")
+                if extraction["status"] != "preserved_unindexed":
+                    text = content.decode("utf-8")
+                    if sha256_hex(text.encode("utf-8")) != extraction["extracted_text_sha256"]:
+                        raise ValueError("extracted source digest mismatch")
+                for chunk in extraction["chunks"]:
+                    raw = content[chunk["byte_start"] : chunk["byte_end"]]
+                    if (
+                        len(raw) != chunk["byte_end"] - chunk["byte_start"]
+                        or sha256_hex(raw) != chunk["text_sha256"]
+                        or raw.decode("utf-8").encode("utf-8") != raw
+                    ):
+                        raise ValueError("source extraction chunk mismatch")
+            except (KeyError, UnicodeDecodeError, ValueError) as exc:
+                issues.append(
+                    Issue(
+                        ErrorCode.SOURCE_OBJECT_INVALID,
+                        extraction["source_version_id"],
+                        f"source extraction validation failed: {type(exc).__name__}",
+                    )
+                )
+
+        objects_root = self.paths.source_root / "objects" / "sha256"
+        if objects_root.exists():
+            for path in sorted(objects_root.glob("*/*")):
+                if not (path.is_file() or path.is_symlink()):
+                    continue
+                relative = str(path.relative_to(self.paths.source_root / "objects"))
+                if path.is_symlink() or relative not in expected_refs:
+                    issues.append(
+                        Issue(
+                            ErrorCode.SOURCE_OBJECT_INVALID,
+                            str(path),
+                            "source object is a symlink or has no canonical registration event",
                         )
                     )
         return issues

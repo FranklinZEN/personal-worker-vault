@@ -1,0 +1,14 @@
+{
+  "$id": "vault-next://schemas/v1/pending-work-proposal",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "pending_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "selection_binding": {"type": "object"},
+    "work_change_proposal": {"type": "object"}
+  },
+  "required": ["schema_version", "selection_binding", "work_change_proposal", "pending_digest"],
+  "title": "Vault Next uncommitted work proposal",
+  "type": "object"
+}

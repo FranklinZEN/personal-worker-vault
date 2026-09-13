@@ -87,10 +87,11 @@ def typecheck_files() -> int:
                         f"{path}:{node.lineno}: argument {argument.arg} lacks annotation"
                     )
     schema_registry = SchemaRegistry(PROJECT_ROOT / "schemas" / "v1")
-    schema_root = PROJECT_ROOT / "schemas" / "v1"
-    for schema_path in sorted(schema_root.rglob("*.schema.json")):
-        name = str(schema_path.relative_to(schema_root)).removesuffix(".schema.json")
-        schema_registry.get(name)
+    for schema_root in sorted((PROJECT_ROOT / "schemas").glob("v[0-9]*")):
+        schema_version = f"{schema_root.name.removeprefix('v')}.0"
+        for schema_path in sorted(schema_root.rglob("*.schema.json")):
+            name = str(schema_path.relative_to(schema_root)).removesuffix(".schema.json")
+            schema_registry.get(name, schema_version=schema_version)
     for finding in findings:
         print(finding)
     return 1 if findings or not ok else 0

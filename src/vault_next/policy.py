@@ -9,6 +9,12 @@ from pathlib import Path
 from typing import Any
 
 from vault_next.canonical import canonical_sha256
+from vault_next.contracts import (
+    OwnerReceipt,
+    OwnerReceiptVerifier,
+    ReceiptVerificationStatus,
+    UnavailableReceiptVerifier,
+)
 from vault_next.paths import RuntimePaths
 from vault_next.records import SCHEMA_VERSION, SchemaRegistry, timestamp
 
@@ -31,6 +37,12 @@ class PolicyReason(StrEnum):
     APPROVAL_EXPIRED = "APPROVAL_EXPIRED"
     APPROVAL_REQUIRED = "APPROVAL_REQUIRED"
     APPROVAL_REVOKED = "APPROVAL_REVOKED"
+    APPROVAL_RECEIPT_EXPIRED = "APPROVAL_RECEIPT_EXPIRED"
+    APPROVAL_RECEIPT_AUTHORITY_MISMATCH = "APPROVAL_RECEIPT_AUTHORITY_MISMATCH"
+    APPROVAL_RECEIPT_MISMATCH = "APPROVAL_RECEIPT_MISMATCH"
+    APPROVAL_RECEIPT_REJECTED = "APPROVAL_RECEIPT_REJECTED"
+    APPROVAL_RECEIPT_REQUIRED = "APPROVAL_RECEIPT_REQUIRED"
+    APPROVAL_RECEIPT_UNAVAILABLE = "APPROVAL_RECEIPT_UNAVAILABLE"
     APPROVAL_SCOPE_MISMATCH = "APPROVAL_SCOPE_MISMATCH"
     APPROVAL_TARGET_MISMATCH = "APPROVAL_TARGET_MISMATCH"
     EXACT_APPROVAL_MATCH = "EXACT_APPROVAL_MATCH"
@@ -135,23 +147,27 @@ class PolicyEngine:
         schemas: SchemaRegistry,
         *,
         external_mode: str = "deny",
+        receipt_verifier: OwnerReceiptVerifier | None = None,
     ):
         if external_mode not in {"deny", "requires_owner_approval"}:
             raise ValueError("external_mode must be deny or requires_owner_approval")
         self.paths = paths
         self.schemas = schemas
         self.external_mode = external_mode
+        self.receipt_verifier = receipt_verifier or UnavailableReceiptVerifier()
 
     def evaluate(
         self,
         proposal: Proposal,
         *,
         approvals: dict[str, Approval] | None = None,
+        receipts: dict[str, OwnerReceipt] | None = None,
         now: datetime,
     ) -> PolicyResult:
         proposal = proposal if proposal.proposal_digest else proposal.finalized()
         self.schemas.require("policy-proposal", proposal.to_record())
         approvals = approvals or {}
+        receipts = receipts or {}
 
         if proposal.operation_class in {"write", "promote", "delete", "execute"}:
             path_result = self._evaluate_local_targets(proposal.targets)
@@ -182,6 +198,13 @@ class PolicyEngine:
         if reason is not None:
             return self._validated(
                 PolicyResult("requires_owner_approval", reason, approval.approval_id)
+            )
+        receipt_reason = self._receipt_mismatch(
+            approval, proposal, receipts.get(approval.approval_id), now
+        )
+        if receipt_reason is not None:
+            return self._validated(
+                PolicyResult("requires_owner_approval", receipt_reason, approval.approval_id)
             )
         return self._validated(
             PolicyResult("allow", PolicyReason.EXACT_APPROVAL_MATCH, approval.approval_id)
@@ -221,6 +244,36 @@ class PolicyEngine:
         if approval.consequence_class != proposal.consequence_class:
             return PolicyReason.APPROVAL_SCOPE_MISMATCH
         return None
+
+    def _receipt_mismatch(
+        self,
+        approval: Approval,
+        proposal: Proposal,
+        receipt: OwnerReceipt | None,
+        now: datetime,
+    ) -> PolicyReason | None:
+        if receipt is None:
+            return PolicyReason.APPROVAL_RECEIPT_REQUIRED
+        self.schemas.require("owner-receipt", receipt.to_record())
+        if receipt.issued_at > now or receipt.issued_at < approval.granted_at:
+            return PolicyReason.APPROVAL_RECEIPT_MISMATCH
+        if receipt.expires_at is not None and now >= receipt.expires_at:
+            return PolicyReason.APPROVAL_RECEIPT_EXPIRED
+        if (
+            receipt.approval_id != approval.approval_id
+            or receipt.proposal_digest != proposal.proposal_digest
+            or tuple(receipt.targets) != tuple(proposal.targets)
+            or receipt.consequence_class != proposal.consequence_class
+        ):
+            return PolicyReason.APPROVAL_RECEIPT_MISMATCH
+        verification = self.receipt_verifier.verify(receipt)
+        if verification.status == ReceiptVerificationStatus.VERIFIED:
+            if verification.authority_id != receipt.authority_id:
+                return PolicyReason.APPROVAL_RECEIPT_AUTHORITY_MISMATCH
+            return None
+        if verification.status == ReceiptVerificationStatus.UNAVAILABLE:
+            return PolicyReason.APPROVAL_RECEIPT_UNAVAILABLE
+        return PolicyReason.APPROVAL_RECEIPT_REJECTED
 
     def _validated(self, result: PolicyResult) -> PolicyResult:
         self.schemas.require("policy-result", result.to_record())

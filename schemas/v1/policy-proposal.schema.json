@@ -10,7 +10,7 @@
     },
     "consequence_class": {"minLength": 1, "type": "string"},
     "operation_class": {
-      "enum": ["read", "write", "promote", "execute", "transmit", "delete"],
+      "enum": ["read", "write", "promote", "execute", "transmit", "delete", "commit"],
       "type": "string"
     },
     "proposal_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},

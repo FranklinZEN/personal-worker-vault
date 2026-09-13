@@ -1,0 +1,1 @@
+{"$id":"vault-next://schemas/v1/events/source-extraction-recorded","$schema":"https://json-schema.org/draft/2020-12/schema","additionalProperties":false,"properties":{"extraction":{"type":"object"},"extraction_sha256":{"pattern":"^[0-9a-f]{64}$","type":"string"}},"required":["extraction","extraction_sha256"],"type":"object"}

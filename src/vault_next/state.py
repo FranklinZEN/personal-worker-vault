@@ -6,6 +6,7 @@ from datetime import date
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from vault_next.errors import ErrorCode, Issue, ValidationError
 from vault_next.lifecycle import fold_case_states, fold_session_states
 
 
@@ -238,12 +239,38 @@ def fold_work_items(
 
     items: dict[str, dict[str, Any]] = {}
     for event in events:
+        if event["event_type"] == "work_transaction.committed":
+            for operation in event["payload"]["transaction_manifest"]["operations"]:
+                if case_id is not None and operation["case_id"] != case_id:
+                    continue
+                work_item_id = operation["work_item_id"]
+                next_state = operation["next_state"]
+                if operation["operation"] == "record":
+                    items[work_item_id] = {
+                        **next_state,
+                        "work_item_id": work_item_id,
+                        "revision": 1,
+                        "case_id": operation["case_id"],
+                        "session_id": operation["session_id"],
+                        "created_event_id": event["event_id"],
+                        "last_event_id": event["event_id"],
+                    }
+                elif work_item_id in items:
+                    items[work_item_id].update(
+                        {
+                            **next_state,
+                            "revision": operation["expected_revision"] + 1,
+                            "last_event_id": event["event_id"],
+                        }
+                    )
+            continue
         if case_id is not None and event.get("case_id") != case_id:
             continue
         payload = event["payload"]
         if event["event_type"] == "work_item.recorded":
             items[payload["work_item_id"]] = {
                 **payload,
+                "revision": 1,
                 "case_id": event["case_id"],
                 "session_id": event["session_id"],
                 "created_event_id": event["event_id"],
@@ -260,10 +287,61 @@ def fold_work_items(
                     "due_on": payload["due_on"],
                     "next_review_on": payload["next_review_on"],
                     "blocker": payload["blocker"],
+                    "revision": items[payload["work_item_id"]].get("revision", 1) + 1,
                     "last_event_id": event["event_id"],
                 }
             )
+        elif event["event_type"] == "work_batch.committed":
+            for operation in payload["proposal"]["operations"]:
+                work_item_id = operation["work_item_id"]
+                next_state = operation["next_state"]
+                if operation["operation"] == "record":
+                    items[work_item_id] = {
+                        **next_state,
+                        "work_item_id": work_item_id,
+                        "revision": 1,
+                        "case_id": event["case_id"],
+                        "session_id": event["session_id"],
+                        "created_event_id": event["event_id"],
+                        "last_event_id": event["event_id"],
+                    }
+                elif work_item_id in items:
+                    items[work_item_id].update(
+                        {
+                            **next_state,
+                            "revision": operation["expected_revision"] + 1,
+                            "last_event_id": event["event_id"],
+                        }
+                    )
     return items
+
+
+def build_current_work_view(
+    events: list[dict[str, Any]],
+    *,
+    as_of_date: str,
+    time_zone: str,
+    minimum_watermark: str | None = None,
+) -> dict[str, Any]:
+    """Return a current-work view only when it includes a requested committed watermark."""
+
+    watermarks = [event["integrity"]["event_sha256"] for event in events]
+    if minimum_watermark is not None and minimum_watermark not in watermarks:
+        raise ValidationError(
+            [
+                Issue(
+                    ErrorCode.WORK_BATCH_WATERMARK_STALE,
+                    "$/minimum_watermark",
+                    "current-work query does not include the committed watermark",
+                )
+            ]
+        )
+    return {
+        "state": build_current_work_state(
+            events, as_of_date=as_of_date, time_zone=time_zone
+        ),
+        "committed_watermark": watermarks[-1] if watermarks else "GENESIS",
+    }
 
 
 def build_current_work_state(

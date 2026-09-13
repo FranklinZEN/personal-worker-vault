@@ -1,0 +1,19 @@
+{
+  "$id": "vault-next://schemas/v3/events/work-transaction-committed",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "affected_case_ids": {"items": {"pattern": "^case_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+    "compatibility": {"additionalProperties": false, "properties": {"minimum_reader_version": {"pattern": "^[0-9]+[.][0-9]+[.][0-9]+$", "type": "string"}, "minimum_semantic_schema_version": {"const": "3.0", "type": "string"}}, "required": ["minimum_semantic_schema_version", "minimum_reader_version"], "type": "object"},
+    "idempotency_key": {"minLength": 1, "type": "string"},
+    "owner_receipt": {"additionalProperties": true, "type": "object"},
+    "request_id": {"pattern": "^request_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "transaction_manifest": {"additionalProperties": true, "type": "object"},
+    "transaction_manifest_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "transaction_receipt_id": {"pattern": "^receipt_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "transaction_id": {"pattern": "^work_transaction_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}
+  },
+  "required": ["transaction_id", "transaction_manifest", "transaction_manifest_digest", "affected_case_ids", "owner_receipt", "transaction_receipt_id", "request_id", "idempotency_key", "compatibility"],
+  "title": "Vault Next v3 committed global work transaction payload",
+  "type": "object"
+}

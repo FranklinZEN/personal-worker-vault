@@ -1,0 +1,19 @@
+{
+  "$id": "vault-next://schemas/v1/status-view",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "active_items": {"items": {"type": "object"}, "type": "array", "uniqueItems": true},
+    "as_of_date": {"pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$", "type": "string"},
+    "committed_watermark": {"pattern": "^(GENESIS|[0-9a-f]{64})$", "type": "string"},
+    "displayed_view": {"type": "object"},
+    "due_or_overdue_ids": {"items": {"pattern": "^work_item_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}, "type": "array", "uniqueItems": true},
+    "review_due_ids": {"items": {"pattern": "^work_item_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}, "type": "array", "uniqueItems": true},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "scope_case_ids": {"items": {"pattern": "^case_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}, "type": "array", "uniqueItems": true},
+    "time_zone": {"minLength": 1, "type": "string"}
+  },
+  "required": ["schema_version", "scope_case_ids", "as_of_date", "time_zone", "committed_watermark", "active_items", "due_or_overdue_ids", "review_due_ids", "displayed_view"],
+  "title": "Vault Next concise scoped current status",
+  "type": "object"
+}

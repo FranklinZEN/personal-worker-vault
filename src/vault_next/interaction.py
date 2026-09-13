@@ -88,6 +88,9 @@ class InteractionRuntime:
         *,
         state: dict[str, Any],
         open_questions: list[str] | None = None,
+        request_id: str | None = None,
+        idempotency_key: str | None = None,
+        request_sha256: str | None = None,
     ) -> dict[str, Any]:
         """Capture concise resumable state while rejecting transcript-like storage."""
 
@@ -114,6 +117,12 @@ class InteractionRuntime:
             "source_event_ids": [event["event_id"] for event in prior],
             "source_watermark": prior[-1]["integrity"]["event_sha256"],
         }
+        _add_request_binding(
+            payload,
+            request_id=request_id,
+            idempotency_key=idempotency_key,
+            request_sha256=request_sha256,
+        )
         return self.runtime.record_reasoning_event(
             session_id,
             "checkpoint.recorded",
@@ -133,6 +142,9 @@ class InteractionRuntime:
         prior_version_id: str | None = None,
         addressed_feedback_ids: list[str] | None = None,
         review_pending: bool = False,
+        request_id: str | None = None,
+        idempotency_key: str | None = None,
+        request_sha256: str | None = None,
     ) -> ArtifactRegistration:
         """Create immutable bytes and append their exact lineage to semantic history."""
 
@@ -196,6 +208,12 @@ class InteractionRuntime:
                 "change_summary": change_summary,
                 "status": "review_pending" if review_pending else "working",
             }
+            _add_request_binding(
+                version,
+                request_id=request_id,
+                idempotency_key=idempotency_key,
+                request_sha256=request_sha256,
+            )
             self.schemas.require("artifact-version", version)
             event = self.runtime.record_reasoning_event(
                 session_id,
@@ -508,6 +526,29 @@ def _forbidden_checkpoint_keys(value: Any) -> set[str]:
         for item in value:
             found.update(_forbidden_checkpoint_keys(item))
     return found
+
+
+def _add_request_binding(
+    record: dict[str, Any],
+    *,
+    request_id: str | None,
+    idempotency_key: str | None,
+    request_sha256: str | None,
+) -> None:
+    """Attach an all-or-nothing S3 request binding without changing legacy records."""
+
+    values = (request_id, idempotency_key, request_sha256)
+    if all(value is None for value in values):
+        return
+    if any(value is None for value in values):
+        raise ValueError("request binding requires request ID, idempotency key, and digest")
+    record.update(
+        {
+            "request_id": request_id,
+            "idempotency_key": idempotency_key,
+            "request_sha256": request_sha256,
+        }
+    )
 
 
 def _durable_create_if_absent(path: Path, data: bytes) -> bool:

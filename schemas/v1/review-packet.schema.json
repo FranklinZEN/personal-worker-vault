@@ -18,6 +18,27 @@
       "type": "object"
     },
     "review_kind": {"const": "semantic_coherence", "type": "string"},
+    "reviewability": {
+      "additionalProperties": false,
+      "properties": {
+        "complete": {"type": "boolean"},
+        "omissions": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "category": {"enum": ["primary_question", "target_content", "context_records", "evidence", "sensitivity"], "type": "string"},
+              "reason": {"minLength": 1, "type": "string"},
+              "ref": {"minLength": 1, "type": "string"}
+            },
+            "required": ["category", "ref", "reason"],
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "required": ["complete", "omissions"],
+      "type": "object"
+    },
     "rubric_id": {"minLength": 1, "type": "string"},
     "sensitivity": {
       "additionalProperties": false,
@@ -36,10 +57,55 @@
       "properties": {
         "alternatives": {"items": {"type": "object"}, "type": "array"},
         "assumptions": {"items": {"type": "object"}, "type": "array"},
+        "context_records": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "byte_count": {"type": "integer"},
+              "event_id": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+              "event_type": {"minLength": 1, "type": "string"},
+              "payload": {"additionalProperties": true, "type": "object"},
+              "payload_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+            },
+            "required": ["event_id", "event_type", "payload", "payload_sha256", "byte_count"],
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "evidence": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "byte_count": {"type": "integer"},
+              "content_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+              "content_type": {"minLength": 1, "type": "string"},
+              "evidence_id": {"pattern": "^evidence_sha256_[0-9a-f]{64}$", "type": "string"},
+              "source_event_id": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+              "text": {"type": "string"}
+            },
+            "required": ["evidence_id", "source_event_id", "content_type", "content_sha256", "byte_count", "text"],
+            "type": "object"
+          },
+          "type": "array"
+        },
         "primary_question": {"minLength": 1, "type": "string"},
         "recommendations": {"items": {"type": "object"}, "type": "array"},
         "target_ref": {"minLength": 1, "type": "string"},
         "target_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+        "target_content": {
+          "additionalProperties": false,
+          "properties": {
+            "byte_count": {"type": ["integer", "null"]},
+            "content": {"type": ["object", "null"]},
+            "content_sha256": {"pattern": "^[0-9a-f]{64}$", "type": ["string", "null"]},
+            "representation": {"enum": ["event_payload", "artifact_text", "none"], "type": "string"},
+            "source_event_id": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+            "status": {"enum": ["present", "omitted", "withheld"], "type": "string"},
+            "text": {"type": ["string", "null"]}
+          },
+          "required": ["status", "representation", "source_event_id", "content_sha256", "byte_count", "content", "text"],
+          "type": "object"
+        },
         "target_type": {"enum": ["recommendation", "artifact_version", "checkpoint"], "type": "string"}
       },
       "required": ["primary_question", "target_type", "target_ref", "target_sha256", "recommendations", "assumptions", "alternatives"],

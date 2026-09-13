@@ -1,0 +1,32 @@
+{
+  "$id": "vault-next://schemas/v2/source-capture-manifest",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "capture_id": {"pattern": "^source_capture_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "capture_manifest_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "capture_method": {"const": "native_local_synthetic_attachment_handoff", "type": "string"},
+    "captured_at": {"format": "date-time", "type": "string"},
+    "case_id": {"pattern": "^case_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "claimed_display_name": {"maxLength": 512, "minLength": 1, "type": "string"},
+    "content_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "expires_at": {"format": "date-time", "type": "string"},
+    "idempotency_key": {"minLength": 1, "type": "string"},
+    "media_type": {"enum": ["text/plain", "text/markdown", "application/octet-stream"], "type": "string"},
+    "permitted_processors": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+    "purpose": {"const": "source_capture", "type": "string"},
+    "retention_mode": {"const": "disposable_synthetic_runtime", "type": "string"},
+    "schema_version": {"const": "2.0", "type": "string"},
+    "sensitivity_labels": {"items": {"enum": ["none", "personal", "work", "hr", "political", "legal", "formal_eval", "irreversible"], "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+    "session_id": {"pattern": "^session_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "source_class": {"const": "synthetic_fixture", "type": "string"},
+    "source_effective_at": {"format": "date-time", "type": ["string", "null"]},
+    "source_family_id": {"pattern": "^source_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "source_request_id": {"pattern": "^request_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "source_registration_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "byte_count": {"type": "integer"}
+  },
+  "required": ["schema_version", "purpose", "capture_id", "case_id", "session_id", "source_family_id", "source_request_id", "source_registration_digest", "idempotency_key", "source_class", "capture_method", "claimed_display_name", "content_sha256", "byte_count", "media_type", "captured_at", "source_effective_at", "sensitivity_labels", "retention_mode", "permitted_processors", "expires_at", "capture_manifest_digest"],
+  "title": "Vault Next v2 local synthetic source-capture manifest",
+  "type": "object"
+}

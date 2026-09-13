@@ -1,0 +1,39 @@
+{
+  "$id": "vault-next://schemas/v2/events/work-batch-committed",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "compatibility": {
+      "additionalProperties": false,
+      "properties": {
+        "minimum_reader_version": {"pattern": "^[0-9]+[.][0-9]+[.][0-9]+$", "type": "string"},
+        "minimum_semantic_schema_version": {"const": "2.0", "type": "string"}
+      },
+      "required": ["minimum_semantic_schema_version", "minimum_reader_version"],
+      "type": "object"
+    },
+    "idempotency_key": {"minLength": 1, "type": "string"},
+    "owner_receipt": {
+      "additionalProperties": false,
+      "properties": {
+        "approval_id": {"pattern": "^approval_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+        "authority_id": {"minLength": 1, "type": "string"},
+        "consequence_class": {"minLength": 1, "type": "string"},
+        "expires_at": {"format": "date-time", "type": ["string", "null"]},
+        "issued_at": {"format": "date-time", "type": "string"},
+        "proposal_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+        "receipt_id": {"pattern": "^receipt_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+        "schema_version": {"const": "1.0", "type": "string"},
+        "targets": {"items": {"pattern": "^work_item_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true}
+      },
+      "required": ["schema_version", "receipt_id", "authority_id", "approval_id", "proposal_digest", "targets", "consequence_class", "issued_at", "expires_at"],
+      "type": "object"
+    },
+    "proposal": {"additionalProperties": true, "type": "object"},
+    "request_id": {"pattern": "^request_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "work_receipt_id": {"pattern": "^receipt_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}
+  },
+  "required": ["proposal", "owner_receipt", "work_receipt_id", "request_id", "idempotency_key", "compatibility"],
+  "title": "Vault Next v2 committed work batch payload",
+  "type": "object"
+}

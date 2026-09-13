@@ -17,6 +17,22 @@
         "defaults": {"additionalProperties": true, "type": "object"},
         "family": {"minLength": 1, "type": "string"},
         "framework_default": {"minLength": 1, "type": "string"},
+        "function_contract": {
+          "additionalProperties": false,
+          "properties": {
+            "acceptance_ids": {"items": {"pattern": "^MF-[0-9]{2}$", "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+            "allowed_effects": {"items": {"enum": ["read", "propose", "commit"], "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+            "completion_outcomes": {"items": {"enum": ["answered", "proposed", "committed", "paused", "unavailable"], "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+            "defaults": {"additionalProperties": true, "type": "object"},
+            "dependencies": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+            "direct_entry": {"const": true, "type": "boolean"},
+            "function_id": {"pattern": "^function_[a-z0-9_]+$", "type": "string"},
+            "readiness_capabilities": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+            "required_inputs": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true}
+          },
+          "required": ["function_id", "direct_entry", "required_inputs", "defaults", "allowed_effects", "completion_outcomes", "dependencies", "readiness_capabilities", "acceptance_ids"],
+          "type": "object"
+        },
         "kind": {"enum": ["family", "named"], "type": "string"},
         "near_miss_phrases": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
         "optional_inputs": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},

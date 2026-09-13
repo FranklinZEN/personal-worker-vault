@@ -55,6 +55,45 @@
       "required": ["result", "reason_code", "approval_ref"],
       "type": "object"
     },
+    "public_research_attempt": {
+      "additionalProperties": false,
+      "properties": {
+        "citation_event_id": {
+          "pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+          "type": ["string", "null"]
+        },
+        "component_id": {"const": "vault-next-direct-https-transport", "type": "string"},
+        "component_version": {"enum": ["0.1.0", "0.2.0"], "type": "string"},
+        "fixed_url_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+        "item_receipt_id": {
+          "pattern": "^receipt_[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+          "type": ["string", "null"]
+        },
+        "phase": {
+          "enum": ["preflight", "response_policy", "item_confirmation", "restart_recovery"],
+          "type": "string"
+        },
+        "scope_receipt_id": {
+          "pattern": "^receipt_[0-7][0-9A-HJKMNP-TV-Z]{25}$",
+          "type": "string"
+        },
+        "send_state": {
+          "enum": ["not_sent", "possibly_sent", "response_validated"],
+          "type": "string"
+        }
+      },
+      "required": [
+        "scope_receipt_id",
+        "component_id",
+        "component_version",
+        "fixed_url_sha256",
+        "send_state",
+        "phase",
+        "item_receipt_id",
+        "citation_event_id"
+      ],
+      "type": ["object", "null"]
+    },
     "result": {"enum": ["succeeded", "failed", "denied", "cancelled"], "type": "string"},
     "schema_version": {"const": "1.0", "type": "string"},
     "semantic_event_refs": {
@@ -80,6 +119,7 @@
     "target_summary",
     "input_digest",
     "policy",
+    "public_research_attempt",
     "attempt_status",
     "result",
     "output_refs",

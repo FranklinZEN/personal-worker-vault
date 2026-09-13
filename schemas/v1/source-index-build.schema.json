@@ -1,0 +1,26 @@
+{
+  "$id": "vault-next://schemas/v1/source-index-build",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "build_id": {"pattern": "^source_index_build_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "case_id": {"pattern": "^case_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "chunk_count": {"type": "integer"},
+    "created_at": {"format": "date-time", "type": "string"},
+    "extractor_version": {"const": "utf8-structure-v1", "type": "string"},
+    "idempotency_key": {"minLength": 1, "type": "string"},
+    "index_version": {"const": "fts5-v1", "type": "string"},
+    "request_id": {"pattern": "^request_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "request_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "session_id": {"pattern": "^session_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "source_event_ids": {"items": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+    "source_set_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "source_watermark": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "sqlite_byte_count": {"type": "integer"},
+    "sqlite_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "validation": {"items": {"enum": ["quick_check", "row_mapping", "lexical_probe"], "type": "string"}, "minItems": 3, "type": "array", "uniqueItems": true}
+  },
+  "required": ["schema_version", "build_id", "request_id", "idempotency_key", "request_sha256", "case_id", "session_id", "source_event_ids", "source_set_sha256", "source_watermark", "index_version", "extractor_version", "sqlite_sha256", "sqlite_byte_count", "chunk_count", "validation", "created_at"],
+  "type": "object"
+}

@@ -1,0 +1,17 @@
+{
+  "$id": "vault-next://schemas/v3/work-transaction-receipt",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "committed_watermark": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "manifest_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "owner_receipt_ref": {"pattern": "^receipt_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "receipt_id": {"pattern": "^receipt_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "schema_version": {"const": "3.0", "type": "string"},
+    "status": {"const": "committed", "type": "string"},
+    "transaction_id": {"pattern": "^work_transaction_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}
+  },
+  "required": ["schema_version", "receipt_id", "transaction_id", "manifest_digest", "status", "committed_watermark", "owner_receipt_ref"],
+  "title": "Vault Next global work transaction visibility receipt",
+  "type": "object"
+}

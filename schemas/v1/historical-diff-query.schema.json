@@ -1,0 +1,15 @@
+{
+  "$id": "vault-next://schemas/v1/historical-diff-query",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "as_of_date": {"pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$", "type": "string"},
+    "baseline": {"type": ["object", "null"]},
+    "case_scope": {"items": {"pattern": "^case_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}, "type": "array", "uniqueItems": true},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "time_zone": {"minLength": 1, "type": "string"}
+  },
+  "required": ["schema_version", "case_scope", "as_of_date", "time_zone", "baseline"],
+  "title": "Vault Next committed historical-diff query",
+  "type": "object"
+}

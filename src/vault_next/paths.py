@@ -50,6 +50,18 @@ class RuntimePaths:
         return self.root / "data" / "evidence"
 
     @property
+    def source_root(self) -> Path:
+        """Immutable S3-B synthetic source bytes and noncanonical intake markers."""
+
+        return self.root / "data" / "sources"
+
+    @property
+    def derived_root(self) -> Path:
+        """Rebuildable derived state; never a canonical source of truth."""
+
+        return self.root / "data" / "derived"
+
+    @property
     def package_root(self) -> Path:
         return self.root / "data" / "packages"
 
@@ -109,6 +121,8 @@ class RuntimePaths:
             self.audit_root,
             self.staging_root,
             self.evidence_root,
+            self.source_root,
+            self.derived_root,
             self.package_root,
             self.evaluation_root,
             self.review_root,

@@ -1,7 +1,7 @@
 PYTHON ?= python3
 export PYTHONPATH := src
 
-.PHONY: format format-check lint typecheck test acceptance verify demo demo-phase2 demo-phase3 demo-phase3a demo-phase4 demo-phase5
+.PHONY: format format-check lint typecheck publication-check test acceptance verify demo demo-phase2 demo-phase3 demo-phase3a demo-phase4 demo-phase5
 
 format:
 	$(PYTHON) -m vault_next.dev format
@@ -15,13 +15,16 @@ lint:
 typecheck:
 	$(PYTHON) -m vault_next.dev typecheck
 
+publication-check:
+	$(PYTHON) -m vault_next.publication --root .
+
 test:
 	$(PYTHON) -m unittest discover -s tests -t . -v
 
 acceptance:
 	$(PYTHON) -m unittest discover -s tests/acceptance -t . -v
 
-verify: format-check lint typecheck test acceptance
+verify: format-check lint typecheck publication-check test acceptance
 
 demo:
 	$(PYTHON) -m vault_next --root .phase1-demo synthetic-run

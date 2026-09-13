@@ -1,0 +1,16 @@
+{
+  "$id": "vault-next://schemas/v2/source-capture-display",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "authority_id": {"const": "vault-next-local-confirmation/v2", "type": "string"},
+    "bundle_id": {"pattern": "^bundle_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "capture_manifest": {"additionalProperties": true, "type": "object"},
+    "capture_manifest_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "schema_version": {"const": "2.0", "type": "string"},
+    "source_capture_receipt": {"additionalProperties": true, "type": "object"}
+  },
+  "required": ["schema_version", "authority_id", "bundle_id", "capture_manifest", "capture_manifest_digest", "source_capture_receipt"],
+  "title": "Vault Next v2 source-capture confirmation display",
+  "type": "object"
+}

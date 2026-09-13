@@ -55,13 +55,6 @@ docs/**/personal/
 *.p12
 *.pfx
 
-# Canonical runtime data is local and must never be committed accidentally.
-data/audit/
-data/artifacts/
-data/events/
-data/evidence/
-data/evaluations/
-data/projections/
-data/quarantine/
-data/reviews/
-data/staging/
+# Canonical, derived, package, index, report, and recovery runtime data is local only.
+# A single root rule protects future stores as well as the current runtime layout.
+/data/

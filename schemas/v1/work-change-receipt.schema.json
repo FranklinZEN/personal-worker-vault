@@ -1,0 +1,17 @@
+{
+  "$id": "vault-next://schemas/v1/work-change-receipt",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "batch_id": {"pattern": "^work_batch_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "committed_watermark": {"pattern": "^(GENESIS|[0-9a-f]{64})$", "type": ["string", "null"]},
+    "owner_receipt_ref": {"pattern": "^receipt_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": ["string", "null"]},
+    "proposal_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "receipt_id": {"pattern": "^receipt_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "status": {"enum": ["committed", "pending", "failed", "unavailable"], "type": "string"}
+  },
+  "required": ["schema_version", "receipt_id", "batch_id", "proposal_digest", "status", "committed_watermark", "owner_receipt_ref"],
+  "title": "Vault Next work-change visibility receipt",
+  "type": "object"
+}

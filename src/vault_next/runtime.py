@@ -651,6 +651,8 @@ class CaseSessionRuntime:
         when: datetime | None = None,
         actor: dict[str, str] | None = None,
         provenance: list[dict[str, str]] | None = None,
+        approval_ref: str | None = None,
+        schema_version: str = "1.0",
     ) -> dict[str, Any]:
         instant = when or self.clock()
         candidate = build_event(
@@ -666,6 +668,8 @@ class CaseSessionRuntime:
             id_factory=self.ids,
             actor=actor,
             provenance=provenance,
+            approval_ref=approval_ref,
+            schema_version=schema_version,
         )
         return self.semantic.append(candidate)
 

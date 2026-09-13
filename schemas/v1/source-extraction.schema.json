@@ -1,0 +1,56 @@
+{
+  "$id": "vault-next://schemas/v1/source-extraction",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "chunks": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "anchor": {"minLength": 1, "type": "string"},
+          "byte_end": {"type": "integer"},
+          "byte_start": {"type": "integer"},
+          "chunk_id": {"minLength": 1, "type": "string"},
+          "heading_path": {"items": {"minLength": 1, "type": "string"}, "type": "array"},
+          "line_end": {"type": "integer"},
+          "line_start": {"type": "integer"},
+          "parent_anchor": {"minLength": 1, "type": ["string", "null"]},
+          "text_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+        },
+        "required": ["chunk_id", "anchor", "byte_start", "byte_end", "line_start", "line_end", "heading_path", "parent_anchor", "text_sha256"],
+        "type": "object"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "extracted_at": {"format": "date-time", "type": "string"},
+    "extracted_text_sha256": {"pattern": "^[0-9a-f]{64}$", "type": ["string", "null"]},
+    "extraction_id": {"pattern": "^source_extraction_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "extractor_version": {"const": "utf8-structure-v1", "type": "string"},
+    "idempotency_key": {"minLength": 1, "type": "string"},
+    "omissions": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "anchor": {"minLength": 1, "type": "string"},
+          "byte_end": {"type": "integer"},
+          "byte_start": {"type": "integer"},
+          "reason": {"enum": ["unit_exceeds_s3b_budget", "unsupported_media_type", "invalid_utf8", "parser_failure", "source_unavailable"], "type": "string"}
+        },
+        "required": ["anchor", "byte_start", "byte_end", "reason"],
+        "type": "object"
+      },
+      "type": "array",
+      "uniqueItems": true
+    },
+    "registration_event_id": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "request_id": {"pattern": "^request_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "request_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "source_object_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "source_version_id": {"pattern": "^source_version_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "status": {"enum": ["complete", "partial", "preserved_unindexed"], "type": "string"}
+  },
+  "required": ["schema_version", "extraction_id", "source_version_id", "registration_event_id", "source_object_sha256", "extractor_version", "extracted_text_sha256", "status", "chunks", "omissions", "extracted_at", "request_id", "idempotency_key", "request_sha256"],
+  "type": "object"
+}
