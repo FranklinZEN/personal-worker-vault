@@ -1,0 +1,1 @@
+{"$id":"vault-next://schemas/v1/events/experience-candidate-withdrawn","$schema":"https://json-schema.org/draft/2020-12/schema","additionalProperties":false,"properties":{"candidate_id":{"minLength":1,"type":"string"},"reason":{"minLength":1,"type":"string"}},"required":["candidate_id","reason"],"type":"object"}

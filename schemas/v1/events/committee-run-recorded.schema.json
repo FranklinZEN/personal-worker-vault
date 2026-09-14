@@ -1,0 +1,1 @@
+{"$id":"vault-next://schemas/v1/events/committee-run-recorded","$schema":"https://json-schema.org/draft/2020-12/schema","additionalProperties":false,"properties":{"packet":{"type":"object"},"packet_sha256":{"pattern":"^[0-9a-f]{64}$","type":"string"}},"required":["packet","packet_sha256"],"type":"object"}
