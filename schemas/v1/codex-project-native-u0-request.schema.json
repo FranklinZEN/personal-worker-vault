@@ -1,0 +1,18 @@
+{
+  "$id": "vault-next://schemas/v1/codex-project-native-u0-request",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "authority_level": {"const": "U0", "type": "string"},
+    "candidate_lifecycle": {"const": "inactive", "type": "string"},
+    "evidence_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "method_package": {"const": "meeting-debrief", "type": "string"},
+    "method_version": {"const": "0.2.0", "type": "string"},
+    "no_effects": {"items": {"enum": ["no_save", "no_activate", "no_apply", "no_send", "no_schedule", "no_tools"], "type": "string"}, "type": "array"},
+    "processing_surface": {"const": "codex_project_native", "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"}
+  },
+  "required": ["schema_version", "method_package", "method_version", "evidence_sha256", "processing_surface", "authority_level", "candidate_lifecycle", "no_effects"],
+  "title": "Codex project-native Meeting Debrief U0 request",
+  "type": "object"
+}

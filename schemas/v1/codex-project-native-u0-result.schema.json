@@ -1,0 +1,29 @@
+{
+  "$id": "vault-next://schemas/v1/codex-project-native-u0-result",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "analytical_usefulness": {"const": "owner_review_pending", "type": "string"},
+    "candidate_lifecycle": {"const": "inactive", "type": "string"},
+    "debrief_id": {"pattern": "^meeting_debrief_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "evidence_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "execution_surface": {"const": "codex_project_native", "type": "string"},
+    "findings": {"items": {"type": "object"}, "type": "array"},
+    "ingress_kind": {"enum": ["paste", "attachment", "local_file"], "type": "string"},
+    "limitations": {"items": {"minLength": 1, "type": "string"}, "type": "array"},
+    "method_package": {"const": "meeting-debrief", "type": "string"},
+    "method_version": {"const": "0.2.0", "type": "string"},
+    "omissions": {"items": {"minLength": 1, "type": "string"}, "type": "array"},
+    "open_questions": {"items": {"minLength": 1, "type": "string"}, "type": "array"},
+    "persistence": {"const": "ephemeral", "type": "string"},
+    "result_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "suggested_followups": {"items": {"minLength": 1, "type": "string"}, "type": "array"},
+    "summary": {"type": "object"},
+    "validation_status": {"const": "accepted", "type": "string"},
+    "vault_next_persistence": {"const": "none", "type": "string"}
+  },
+  "required": ["schema_version", "debrief_id", "method_package", "method_version", "execution_surface", "analytical_usefulness", "evidence_sha256", "ingress_kind", "findings", "summary", "open_questions", "suggested_followups", "omissions", "limitations", "persistence", "candidate_lifecycle", "validation_status", "vault_next_persistence", "result_sha256"],
+  "title": "Codex project-native cited Meeting Debrief U0 result",
+  "type": "object"
+}

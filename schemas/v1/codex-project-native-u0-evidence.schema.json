@@ -1,0 +1,21 @@
+{
+  "$id": "vault-next://schemas/v1/codex-project-native-u0-evidence",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "anchors": {"items": {"additionalProperties": false, "properties": {"anchor": {"minLength": 1, "type": "string"}, "ordinal": {"type": "integer"}, "text_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"}}, "required": ["anchor", "ordinal", "text_sha256"], "type": "object"}, "type": "array"},
+    "ingress_id": {"pattern": "^chat_ingress_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "material_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "normalized_byte_count": {"type": "integer"},
+    "normalized_evidence_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "normalized_text_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "omissions": {"items": {"additionalProperties": false, "properties": {"anchor": {"type": ["string", "null"]}, "reason": {"minLength": 1, "type": "string"}}, "required": ["anchor", "reason"], "type": "object"}, "type": "array"},
+    "profile_id": {"enum": ["plain_text", "markdown_text", "docx_wordprocessingml"], "type": "string"},
+    "profile_version": {"const": "1.0", "type": "string"},
+    "provenance_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"}
+  },
+  "required": ["schema_version", "ingress_id", "profile_id", "profile_version", "material_sha256", "normalized_text_sha256", "normalized_byte_count", "anchors", "omissions", "provenance_sha256", "normalized_evidence_sha256"],
+  "title": "Codex project-native frozen U0 evidence packet",
+  "type": "object"
+}

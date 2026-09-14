@@ -294,12 +294,19 @@ class KernelValidator:
         source_events = [
             event for event in events if event["event_type"] == "source.version_registered"
         ]
+        direct_private_events = [
+            event for event in events if event["event_type"] == "direct_private_admission.recorded"
+        ]
         by_version = {
             event["payload"]["version"]["source_version_id"]: event
             for event in source_events
         }
         content_by_version: dict[str, bytes] = {}
-        expected_refs: set[str] = set()
+        expected_refs: set[str] = {
+            event["payload"]["source_version"]["object_ref"]
+            for event in direct_private_events
+            if isinstance(event["payload"].get("source_version"), dict)
+        }
         for event in source_events:
             version = event["payload"]["version"]
             object_ref = version["object_ref"]
@@ -357,6 +364,7 @@ class KernelValidator:
                     )
                 )
 
+        issues.extend(self._direct_private_source_issues(direct_private_events))
         objects_root = self.paths.source_root / "objects" / "sha256"
         if objects_root.exists():
             for path in sorted(objects_root.glob("*/*")):
@@ -371,6 +379,48 @@ class KernelValidator:
                             "source object is a symlink or has no canonical registration event",
                         )
                     )
+        return issues
+
+    def _direct_private_source_issues(self, events: list[dict[str, Any]]) -> list[Issue]:
+        """Verify committed S5-DP v2 objects and bounded extraction without source fallback."""
+
+        issues: list[Issue] = []
+        for event in events:
+            try:
+                payload = event["payload"]
+                version = payload["source_version"]
+                extraction = payload["extraction"]
+                path = self.paths.source_root / "objects" / version["object_ref"]
+                if path.is_symlink():
+                    raise ValueError("source object symlink is prohibited")
+                content = self.paths.ensure_runtime_write_target(path).read_bytes()
+                if (
+                    sha256_hex(content) != version["content_sha256"]
+                    or len(content) != version["byte_count"]
+                    or extraction["source_version_id"] != version["source_version_id"]
+                    or extraction["source_object_sha256"] != version["content_sha256"]
+                ):
+                    raise ValueError("direct-private source binding mismatch")
+                text = content.decode("utf-8")
+                if sha256_hex(text.encode("utf-8")) != extraction["extracted_text_sha256"]:
+                    raise ValueError("direct-private extraction digest mismatch")
+                for chunk in extraction["chunks"]:
+                    raw = content[chunk["byte_start"] : chunk["byte_end"]]
+                    if (
+                        chunk["byte_start"] < 0
+                        or chunk["byte_end"] <= chunk["byte_start"]
+                        or sha256_hex(raw) != chunk["text_sha256"]
+                        or raw.decode("utf-8").encode("utf-8") != raw
+                    ):
+                        raise ValueError("direct-private chunk mismatch")
+            except (KeyError, UnicodeDecodeError, ValueError, OSError, ValidationError) as exc:
+                issues.append(
+                    Issue(
+                        ErrorCode.SOURCE_OBJECT_INVALID,
+                        event.get("event_id", "direct-private"),
+                        f"direct-private source validation failed: {type(exc).__name__}",
+                    )
+                )
         return issues
 
     def _projection_issues(self, events: list[dict[str, Any]]) -> tuple[int, list[Issue]]:

@@ -1,0 +1,19 @@
+{
+  "$id": "vault-next://schemas/v1/chat-ingress-result",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "authority_level": {"enum": ["U0", "U1"], "type": "string"},
+    "available_next_actions": {"items": {"minLength": 1, "type": "string"}, "type": "array"},
+    "debrief": {"type": ["object", "null"]},
+    "evidence_packet": {"type": ["object", "null"]},
+    "ingress_envelope": {"type": ["object", "null"]},
+    "limitations": {"items": {"minLength": 1, "type": "string"}, "type": "array"},
+    "save": {"type": ["object", "null"]},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "status": {"enum": ["complete", "needs_input", "unsupported", "unavailable", "declined", "interrupted", "already_saved", "rejected"], "type": "string"}
+  },
+  "required": ["schema_version", "status", "authority_level", "ingress_envelope", "evidence_packet", "debrief", "save", "available_next_actions", "limitations"],
+  "title": "Safe chat ingress result envelope",
+  "type": "object"
+}

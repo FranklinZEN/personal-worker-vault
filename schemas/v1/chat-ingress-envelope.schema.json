@@ -1,0 +1,32 @@
+{
+  "$id": "vault-next://schemas/v1/chat-ingress-envelope",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "authority_level": {"const": "U0", "type": "string"},
+    "byte_count": {"type": "integer"},
+    "declared_extension": {"type": ["string", "null"]},
+    "declared_media_type": {"type": ["string", "null"]},
+    "ingress_id": {"pattern": "^chat_ingress_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "ingress_kind": {"enum": ["paste", "attachment", "local_file", "acquired_link"], "type": "string"},
+    "material_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "processing_surface": {"const": "synthetic_fixture", "type": "string"},
+    "provenance": {
+      "additionalProperties": false,
+      "properties": {
+        "detail_digests": {"items": {"pattern": "^[0-9a-f]{64}$", "type": "string"}, "type": "array"},
+        "kind": {"enum": ["paste", "attachment", "local_file", "acquired_link"], "type": "string"},
+        "metadata_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+        "opaque_id": {"minLength": 1, "type": "string"}
+      },
+      "required": ["kind", "opaque_id", "metadata_sha256", "detail_digests"],
+      "type": "object"
+    },
+    "safe_label": {"maxLength": 128, "minLength": 1, "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "synthetic_only": {"const": true, "type": "boolean"}
+  },
+  "required": ["schema_version", "ingress_id", "ingress_kind", "safe_label", "declared_media_type", "declared_extension", "byte_count", "material_sha256", "provenance", "processing_surface", "authority_level", "synthetic_only"],
+  "title": "Chat-first synthetic ingress envelope",
+  "type": "object"
+}

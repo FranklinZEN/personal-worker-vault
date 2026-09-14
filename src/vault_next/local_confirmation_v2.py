@@ -335,6 +335,101 @@ class MacOSTransactionConfirmationUI:
         return result.stdout.strip()
 
 
+class DirectPrivateNativeLauncher(Protocol):
+    """The only host surface permitted for a future direct-private confirmation."""
+
+    def open_textedit(self, display_path: Path) -> bool: ...
+
+    def request_digest(self, *, purpose: str, expected_manifest_digest: str) -> str: ...
+
+
+class DirectPrivateConfirmationUI(Protocol):
+    """Exact-digest display confirmation for a purpose-limited direct-private receipt."""
+
+    def confirm(
+        self,
+        display_path: Path,
+        *,
+        purpose: str,
+        expected_manifest_digest: str,
+    ) -> str: ...
+
+
+class MacOSDirectPrivateLauncher:
+    """Launch only the fixed local TextEdit and AppleScript confirmation surfaces."""
+
+    open_executable = "/usr/bin/open"
+    osascript_executable = "/usr/bin/osascript"
+
+    def open_textedit(self, display_path: Path) -> bool:
+        result = subprocess.run(
+            [self.open_executable, "-a", "TextEdit", str(display_path)],
+            check=False,
+            capture_output=True,
+        )
+        return result.returncode == 0
+
+    def request_digest(self, *, purpose: str, expected_manifest_digest: str) -> str:
+        if purpose not in {"direct_private_snapshot_scope", "direct_private_source_admission"}:
+            raise LocalConfirmationV2Error("direct-private confirmation purpose is unsupported")
+        label = (
+            "snapshot scope"
+            if purpose == "direct_private_snapshot_scope"
+            else "source admission"
+        )
+        script = "\n".join(
+            (
+                "on run argv",
+                "    set expectedDigest to item 1 of argv",
+                "    set purposeLabel to item 2 of argv",
+                "    try",
+                '        set promptText to "Vault Next requests a local direct-private " & purposeLabel & ¬',
+                '            " confirmation." & ¬',
+                '            "\\n\\nThe complete local-only proposal is open in TextEdit." & ¬',
+                '            " Review it, then type its full manifest digest below." & ¬',
+                '            "\\n\\nExpected digest:\\n"',
+                "        set answerText to text returned of (display dialog (promptText & expectedDigest) ¬",
+                '            default answer "" buttons {"Reject", "Approve"} default button "Approve" ¬',
+                '            cancel button "Reject" with title "Vault Next local confirmation" with icon caution)',
+                "        return answerText",
+                "    on error number -128",
+                '        return ""',
+                "    end try",
+                "end run",
+            )
+        )
+        result = subprocess.run(
+            [self.osascript_executable, "-e", script, expected_manifest_digest, label],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            return ""
+        return result.stdout.strip()
+
+
+class MacOSDirectPrivateConfirmationUI:
+    """Fakeable native route for a future direct-private local confirmation."""
+
+    def __init__(self, launcher: DirectPrivateNativeLauncher | None = None) -> None:
+        self.launcher = launcher if launcher is not None else MacOSDirectPrivateLauncher()
+
+    def confirm(
+        self,
+        display_path: Path,
+        *,
+        purpose: str,
+        expected_manifest_digest: str,
+    ) -> str:
+        if not self.launcher.open_textedit(display_path):
+            raise LocalConfirmationV2Error("direct-private confirmation display could not be opened")
+        return self.launcher.request_digest(
+            purpose=purpose,
+            expected_manifest_digest=expected_manifest_digest,
+        )
+
+
 @dataclass(frozen=True)
 class DurableLocalAuthority:
     """Issue a local signed receipt for one immutable v3 transaction manifest."""
@@ -346,6 +441,7 @@ class DurableLocalAuthority:
     confirmation_ui: ConfirmationUI
     id_factory: ULIDFactory = field(default_factory=lambda: DEFAULT_FACTORY)
     clock: Callable[[], datetime] = aware_utc_now
+    direct_private_confirmation_ui: DirectPrivateConfirmationUI | None = None
 
     def __post_init__(self) -> None:
         root = self.authority_root.resolve()
@@ -397,6 +493,24 @@ class DurableLocalAuthority:
     def public_research_display_root(self) -> Path:
         return self.paths.ensure_runtime_write_target(
             self.paths.evidence_root / "local-confirmation-v2" / "public-research" / "displays"
+        )
+
+    def direct_private_receipt_root(self, purpose: str) -> Path:
+        """Keep each direct-private purpose physically separate from every other receipt class."""
+
+        _require_direct_private_purpose(purpose)
+        return self.paths.ensure_runtime_write_target(
+            self.paths.evidence_root / "local-confirmation-v2" / "direct-private" / purpose
+            / "receipts"
+        )
+
+    def direct_private_display_root(self, purpose: str) -> Path:
+        """Keep direct-private displays owner-local and receipt-purpose separated."""
+
+        _require_direct_private_purpose(purpose)
+        return self.paths.ensure_runtime_write_target(
+            self.paths.evidence_root / "local-confirmation-v2" / "direct-private" / purpose
+            / "displays"
         )
 
     def authorize_transaction(
@@ -639,6 +753,112 @@ class DurableLocalAuthority:
         _write_immutable(
             self.paths.ensure_runtime_write_target(
                 self.public_research_receipt_root / f"{receipt.receipt_id}.json"
+            ),
+            canonical_bytes(record),
+        )
+        return receipt
+
+    def authorize_direct_private_snapshot(self, manifest: dict[str, Any]) -> dict[str, Any]:
+        """Confirm a synthetic direct-private pre-read scope with an existing v2 identity only."""
+
+        return self._authorize_direct_private(manifest, "direct_private_snapshot_scope")
+
+    def authorize_direct_private_admission(self, manifest: dict[str, Any]) -> dict[str, Any]:
+        """Confirm a synthetic direct-private admission bound to its exact snapshot result."""
+
+        return self._authorize_direct_private(manifest, "direct_private_source_admission")
+
+    def _authorize_direct_private(
+        self, manifest: dict[str, Any], expected_purpose: str
+    ) -> dict[str, Any]:
+        _require_direct_private_manifest(manifest, self.schemas, expected_purpose)
+        now = self.clock()
+        if now.tzinfo is None or now.utcoffset() is None:
+            raise ValueError("clock must return a timezone-aware instant")
+        expires_at = _parse_timestamp(manifest["expires_at"])
+        if expires_at <= now.astimezone(UTC):
+            raise LocalConfirmationV2Error("cannot confirm an expired direct-private manifest")
+        if self.direct_private_confirmation_ui is None:
+            raise LocalConfirmationV2Error("direct-private native confirmation UI is not configured")
+        # Direct-private is deliberately a side-purpose: it can never bootstrap, rotate, or
+        # rewrite the v2 identity. A missing identity leaves later source work unavailable.
+        identity, authority = self._signing_identity(allow_create=False)
+        subject_id = (
+            manifest["snapshot_id"]
+            if expected_purpose == "direct_private_snapshot_scope"
+            else manifest["admission_id"]
+        )
+        receipt = {
+            "schema_version": "2.0",
+            "receipt_id": self.id_factory.new("receipt"),
+            "authority_id": AUTHORITY_ID_V2,
+            "purpose": expected_purpose,
+            "subject_id": subject_id,
+            "manifest_digest": manifest["manifest_digest"],
+            "issued_at": timestamp(now),
+            "expires_at": manifest["expires_at"],
+        }
+        receipt_schema = (
+            "direct-private-snapshot-receipt"
+            if expected_purpose == "direct_private_snapshot_scope"
+            else "direct-private-admission-receipt"
+        )
+        self.schemas.require(receipt_schema, receipt, schema_version="2.0")
+        display = {
+            "schema_version": "2.0",
+            "authority_id": AUTHORITY_ID_V2,
+            "bundle_id": authority["bundle_id"],
+            "purpose": expected_purpose,
+            "synthetic_only": manifest["synthetic_only"],
+            "manifest": manifest,
+            "manifest_digest": manifest["manifest_digest"],
+            "receipt": receipt,
+        }
+        self.schemas.require("direct-private-display", display, schema_version="2.0")
+        display_bytes = canonical_bytes(display)
+        display_digest = sha256_hex(display_bytes)
+        display_path = self.paths.ensure_runtime_write_target(
+            self.direct_private_display_root(expected_purpose) / f"{receipt['receipt_id']}.json"
+        )
+        _write_immutable(display_path, display_bytes)
+        response = self.direct_private_confirmation_ui.confirm(
+            display_path,
+            purpose=expected_purpose,
+            expected_manifest_digest=manifest["manifest_digest"],
+        )
+        if not hmac.compare_digest(response, manifest["manifest_digest"]):
+            raise LocalConfirmationV2Declined(
+                "local confirmation did not match the exact direct-private manifest digest"
+            )
+        if _read_bytes(display_path) != display_bytes:
+            raise LocalConfirmationV2Error("direct-private display changed before receipt issuance")
+        confirmed_at = self.clock()
+        if confirmed_at.tzinfo is None or confirmed_at.utcoffset() is None:
+            raise ValueError("clock must return a timezone-aware instant")
+        if expires_at <= confirmed_at.astimezone(UTC):
+            raise LocalConfirmationV2Error("direct-private confirmation expired before receipt issuance")
+        record = {
+            "schema_version": "2.0",
+            "receipt_type": "direct_private",
+            "authority_id": AUTHORITY_ID_V2,
+            "bundle_id": authority["bundle_id"],
+            "algorithm": ALGORITHM,
+            "key_id": identity.key_id,
+            "purpose": expected_purpose,
+            "receipt": receipt,
+            "manifest": manifest,
+            "manifest_digest": manifest["manifest_digest"],
+            "confirmation_display_sha256": display_digest,
+            "confirmed_at": timestamp(confirmed_at),
+            "signature_base64": "pending",
+        }
+        record["signature_base64"] = base64.b64encode(
+            identity.private_key.sign(canonical_bytes(_signature_material(record)))
+        ).decode("ascii")
+        self.schemas.require("direct-private-signed-receipt", record, schema_version="2.0")
+        _write_immutable(
+            self.paths.ensure_runtime_write_target(
+                self.direct_private_receipt_root(expected_purpose) / f"{receipt['receipt_id']}.json"
             ),
             canonical_bytes(record),
         )
@@ -888,6 +1108,118 @@ class SourceCaptureReceiptVerifier:
         if self.verify(receipt).status != ReceiptVerificationStatus.VERIFIED:
             raise LocalConfirmationV2Error("source-capture receipt did not verify")
         return receipt, record["capture_manifest"]
+
+
+class DirectPrivateV2ReceiptVerifier:
+    """Replay-verify only v2-signed direct-private receipts in their exact purpose domain."""
+
+    def __init__(
+        self,
+        paths: RuntimePaths,
+        authority_root: Path,
+        schemas: SchemaRegistry,
+        *,
+        clock: Callable[[], datetime] = aware_utc_now,
+    ) -> None:
+        self.paths = paths
+        self.authority_root = authority_root.resolve()
+        self.schemas = schemas
+        self.clock = clock
+
+    @property
+    def authority_path(self) -> Path:
+        return self.authority_root / "local-confirmation-v2.authority.json"
+
+    def receipt_root(self, purpose: str) -> Path:
+        _require_direct_private_purpose(purpose)
+        return self.paths.evidence_root / "local-confirmation-v2" / "direct-private" / purpose / "receipts"
+
+    def display_root(self, purpose: str) -> Path:
+        _require_direct_private_purpose(purpose)
+        return self.paths.evidence_root / "local-confirmation-v2" / "direct-private" / purpose / "displays"
+
+    def verify(
+        self,
+        receipt_id: str,
+        *,
+        purpose: str,
+        manifest_digest: str,
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        """Return only an unexpired receipt and manifest with exact v2 bindings."""
+
+        _require_direct_private_purpose(purpose)
+        try:
+            authority = _load_record(
+                self.authority_path,
+                self.schemas,
+                "local-confirmation-v2-authority",
+                schema_version="2.0",
+            )
+            record = _load_record(
+                self.receipt_root(purpose) / f"{receipt_id}.json",
+                self.schemas,
+                "direct-private-signed-receipt",
+                schema_version="2.0",
+            )
+            manifest = record["manifest"]
+            _require_direct_private_manifest(manifest, self.schemas, purpose)
+            receipt = record["receipt"]
+            receipt_schema = (
+                "direct-private-snapshot-receipt"
+                if purpose == "direct_private_snapshot_scope"
+                else "direct-private-admission-receipt"
+            )
+            self.schemas.require(receipt_schema, receipt, schema_version="2.0")
+            display_bytes = _read_bytes(self.display_root(purpose) / f"{receipt_id}.json")
+            subject_id = (
+                manifest["snapshot_id"]
+                if purpose == "direct_private_snapshot_scope"
+                else manifest["admission_id"]
+            )
+            if any(
+                (
+                    authority["status"] != "active",
+                    authority["authority_id"] != AUTHORITY_ID_V2,
+                    authority["algorithm"] != ALGORITHM,
+                    authority["bundle_id"] != record["bundle_id"],
+                    authority["key_id"] != record["key_id"],
+                    record["receipt_type"] != "direct_private",
+                    record["authority_id"] != AUTHORITY_ID_V2,
+                    record["purpose"] != purpose,
+                    record["manifest_digest"] != manifest_digest,
+                    record["manifest_digest"] != manifest["manifest_digest"],
+                    record["receipt"] != receipt,
+                    receipt["receipt_id"] != receipt_id,
+                    receipt["authority_id"] != AUTHORITY_ID_V2,
+                    receipt["purpose"] != purpose,
+                    receipt["subject_id"] != subject_id,
+                    receipt["manifest_digest"] != manifest_digest,
+                    receipt["expires_at"] != manifest["expires_at"],
+                    record["confirmation_display_sha256"] != sha256_hex(display_bytes),
+                )
+            ):
+                raise LocalConfirmationV2Error("direct-private receipt binding is invalid")
+            public_bytes = base64.b64decode(authority["public_key_base64"], validate=True)
+            signature = base64.b64decode(record["signature_base64"], validate=True)
+            Ed25519PublicKey.from_public_bytes(public_bytes).verify(
+                signature, canonical_bytes(_signature_material(record))
+            )
+            now = self.clock()
+            if now.tzinfo is None or now.utcoffset() is None:
+                raise ValueError("clock must return a timezone-aware instant")
+            if _parse_timestamp(receipt["expires_at"]) <= now.astimezone(UTC):
+                raise LocalConfirmationV2Error("direct-private receipt is expired")
+        except (
+            InvalidSignature,
+            KeyError,
+            TypeError,
+            ValidationError,
+            ValueError,
+            OSError,
+            LocalConfirmationV2Error,
+        ) as exc:
+            raise LocalConfirmationV2Error("direct-private receipt did not verify") from exc
+        return receipt, manifest
 
 
 class PublicResearchReceiptVerifier:
@@ -1260,6 +1592,34 @@ def require_public_research_manifest(manifest: dict[str, Any], schemas: SchemaRe
         else datetime.min.replace(tzinfo=UTC)
     ):
         raise LocalConfirmationV2Error("public-research receipt expiry must follow retrieval")
+
+
+def _require_direct_private_purpose(purpose: str) -> None:
+    if purpose not in {"direct_private_snapshot_scope", "direct_private_source_admission"}:
+        raise LocalConfirmationV2Error("direct-private receipt purpose is unsupported")
+
+
+def _require_direct_private_manifest(
+    manifest: dict[str, Any],
+    schemas: SchemaRegistry,
+    expected_purpose: str,
+) -> None:
+    """Validate the B1 fixture-only contract without a real-path fallback."""
+
+    _require_direct_private_purpose(expected_purpose)
+    schema = (
+        "direct-private-snapshot-manifest"
+        if expected_purpose == "direct_private_snapshot_scope"
+        else "direct-private-admission-manifest"
+    )
+    schemas.require(schema, manifest, schema_version="2.0")
+    if manifest["purpose"] != expected_purpose or manifest["synthetic_only"] is not True:
+        raise LocalConfirmationV2Error("direct-private manifest purpose is invalid")
+    expected_digest = canonical_sha256(
+        {key: value for key, value in manifest.items() if key != "manifest_digest"}
+    )
+    if not hmac.compare_digest(manifest["manifest_digest"], expected_digest):
+        raise LocalConfirmationV2Error("direct-private manifest digest is invalid")
 
 
 def _parse_timestamp(value: str) -> datetime:

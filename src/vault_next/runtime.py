@@ -331,6 +331,7 @@ class CaseSessionRuntime:
             "artifact.withdrawn",
             "work_item.recorded",
             "work_item.status_changed",
+            "chat_ingress.save_committed",
             "outcome.assessed",
         }
         if event_type not in allowed:

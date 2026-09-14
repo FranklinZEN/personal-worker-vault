@@ -641,6 +641,11 @@ class SemanticLedger(HashChainedLedger):
         issues: list[Issue] = []
         event_type = record["event_type"]
         payload = record["payload"]
+        if event_type in {
+            "direct_private_admission.recorded",
+            "direct_private_admission.deactivated",
+        }:
+            return self._direct_private_source_semantics(record, previous_records)
         if event_type not in {"source.version_registered", "source.extraction_recorded"}:
             return issues
         if record["actor"]["type"] != "runtime":
@@ -865,6 +870,262 @@ class SemanticLedger(HashChainedLedger):
                     ErrorCode.EVENT_TYPE_SEMANTICS_INVALID,
                     "$subject_refs",
                     "source extraction subjects must be exactly version then extraction",
+                )
+            )
+        return issues
+
+    def _direct_private_source_semantics(
+        self,
+        record: dict[str, Any],
+        previous_records: list[dict[str, Any]],
+    ) -> list[Issue]:
+        """Validate the additive S5-DP synthetic-only commit boundary.
+
+        It is intentionally separate from S3-B's source registration/extraction events: S3-B
+        remains synthetic caller-byte intake, while one S5-DP event publishes its exact staged
+        object, provenance, extraction, and candidate state together.
+        """
+
+        issues: list[Issue] = []
+        event_type = record["event_type"]
+        payload = record["payload"]
+        states, _ = fold_session_states(previous_records)
+        session = states.get(record["session_id"])
+        if (
+            record["actor"] != RUNTIME_ACTOR
+            or session is None
+            or session.case_id != record["case_id"]
+            or session.status != "active"
+            or session.frozen
+        ):
+            issues.append(
+                Issue(
+                    ErrorCode.ACTOR_AUTHORITY_INVALID,
+                    "$actor",
+                    "direct-private synthetic admission requires the active governed runtime",
+                )
+            )
+        admissions = [
+            item
+            for item in previous_records
+            if item["event_type"] == "direct_private_admission.recorded"
+        ]
+        if event_type == "direct_private_admission.deactivated":
+            admission = next(
+                (
+                    item
+                    for item in admissions
+                    if item["event_id"] == payload.get("admission_event_id")
+                    and item["payload"].get("admission_manifest", {}).get("admission_id")
+                    == payload.get("admission_id")
+                ),
+                None,
+            )
+            if admission is None or admission["case_id"] != record["case_id"]:
+                issues.append(
+                    Issue(
+                        ErrorCode.EVENT_REFERENCE_MISSING,
+                        "$payload/admission_event_id",
+                        "direct-private deactivation requires its exact prior admission",
+                    )
+                )
+            if record["subject_refs"] != [payload.get("admission_id"), payload.get("admission_event_id")]:
+                issues.append(
+                    Issue(
+                        ErrorCode.EVENT_TYPE_SEMANTICS_INVALID,
+                        "$subject_refs",
+                        "direct-private deactivation subjects must bind admission then event",
+                    )
+                )
+            if any(
+                item["event_type"] == "direct_private_admission.deactivated"
+                and item["payload"].get("admission_event_id") == payload.get("admission_event_id")
+                for item in previous_records
+            ):
+                issues.append(
+                    Issue(
+                        ErrorCode.DUPLICATE_ID,
+                        "$payload/admission_event_id",
+                        "direct-private admission is already deactivated",
+                    )
+                )
+            return issues
+
+        manifest = payload.get("admission_manifest")
+        snapshot = payload.get("snapshot_result")
+        version = payload.get("source_version")
+        extraction = payload.get("extraction")
+        snapshot_receipt = payload.get("snapshot_receipt")
+        admission_receipt = payload.get("admission_receipt")
+        for schema_name, value, path in (
+            ("direct-private-admission-manifest", manifest, "$payload/admission_manifest"),
+            ("direct-private-snapshot-result", snapshot, "$payload/snapshot_result"),
+            ("source-version", version, "$payload/source_version"),
+            ("direct-private-extraction", extraction, "$payload/extraction"),
+        ):
+            if not isinstance(value, dict):
+                continue
+            issues.extend(self._versioned_nested_schema_issues(schema_name, value, path))
+        if isinstance(snapshot_receipt, dict):
+            issues.extend(
+                self._versioned_nested_schema_issues(
+                    "direct-private-snapshot-receipt",
+                    snapshot_receipt,
+                    "$payload/snapshot_receipt",
+                )
+            )
+        if isinstance(admission_receipt, dict):
+            issues.extend(
+                self._versioned_nested_schema_issues(
+                    "direct-private-admission-receipt",
+                    admission_receipt,
+                    "$payload/admission_receipt",
+                )
+            )
+        if not all(
+            isinstance(value, dict)
+            for value in (manifest, snapshot, version, extraction, snapshot_receipt, admission_receipt)
+        ):
+            return issues
+        if (
+            payload.get("admission_manifest_sha256") != manifest.get("manifest_digest")
+            or payload.get("snapshot_result_sha256") != canonical_sha256(snapshot)
+            or payload.get("source_version_sha256") != canonical_sha256(version)
+            or payload.get("extraction_sha256") != canonical_sha256(extraction)
+        ):
+            issues.append(
+                Issue(
+                    ErrorCode.HASH_CHAIN_INVALID,
+                    "$payload",
+                    "direct-private nested digest is invalid",
+                )
+            )
+        commit = dict(payload)
+        supplied_commit = commit.pop("commit_manifest_sha256", None)
+        if supplied_commit != canonical_sha256(commit):
+            issues.append(
+                Issue(
+                    ErrorCode.HASH_CHAIN_INVALID,
+                    "$payload/commit_manifest_sha256",
+                    "direct-private commit manifest digest is invalid",
+                )
+            )
+        if (
+            manifest.get("snapshot_receipt_id") != snapshot_receipt.get("receipt_id")
+            or manifest.get("snapshot_result_sha256") != canonical_sha256(snapshot)
+            or manifest.get("content_sha256") != version.get("content_sha256")
+            or manifest.get("byte_count") != version.get("byte_count")
+            or manifest.get("source_family_id") != version.get("source_family_id")
+            or manifest.get("source_version_id") != version.get("source_version_id")
+            or version.get("snapshot_receipt_id") != snapshot_receipt.get("receipt_id")
+            or version.get("admission_receipt_id") != admission_receipt.get("receipt_id")
+            or version.get("admission_manifest_sha256") != manifest.get("manifest_digest")
+            or extraction.get("admission_id") != manifest.get("admission_id")
+            or extraction.get("source_version_id") != version.get("source_version_id")
+            or extraction.get("source_object_sha256") != version.get("content_sha256")
+        ):
+            issues.append(
+                Issue(
+                    ErrorCode.EVENT_TYPE_SEMANTICS_INVALID,
+                    "$payload",
+                    "direct-private admission bindings are not exact",
+                )
+            )
+        if record["subject_refs"] != [
+            manifest.get("source_family_id"),
+            manifest.get("source_version_id"),
+            manifest.get("admission_id"),
+        ]:
+            issues.append(
+                Issue(
+                    ErrorCode.EVENT_TYPE_SEMANTICS_INVALID,
+                    "$subject_refs",
+                    "direct-private admission subjects must bind family, version, and admission",
+                )
+            )
+        candidate = payload.get("candidate")
+        candidate_sha256 = payload.get("candidate_sha256")
+        treatment = manifest.get("candidate_treatment")
+        if treatment == "source_only" and (candidate is not None or candidate_sha256 is not None):
+            issues.append(
+                Issue(
+                    ErrorCode.EVENT_TYPE_SEMANTICS_INVALID,
+                    "$payload/candidate",
+                    "source-only direct-private admission cannot publish a candidate",
+                )
+            )
+        if treatment in {"knowledge_candidate", "skill_candidate"} and (
+            not isinstance(candidate, dict)
+            or candidate.get("record_kind") != treatment
+            or candidate.get("source_version_id") != version.get("source_version_id")
+            or candidate_sha256 != canonical_sha256(candidate)
+        ):
+            issues.append(
+                Issue(
+                    ErrorCode.EVENT_TYPE_SEMANTICS_INVALID,
+                    "$payload/candidate",
+                    "direct-private candidate is not exact provisional/inactive output",
+                )
+            )
+        versions = {
+            item["payload"]["source_version"]["source_version_id"]: item
+            for item in admissions
+            if isinstance(item["payload"].get("source_version"), dict)
+        }
+        if version.get("source_version_id") in versions:
+            issues.append(
+                Issue(ErrorCode.DUPLICATE_ID, "$payload/source_version/source_version_id", "source version exists")
+            )
+        same_family = [
+            item
+            for item in admissions
+            if item["payload"].get("source_version", {}).get("source_family_id")
+            == version.get("source_family_id")
+        ]
+        parent_id = version.get("prior_source_version_id")
+        parent_sha = version.get("prior_content_sha256")
+        if (parent_id is None) != (parent_sha is None):
+            issues.append(
+                Issue(
+                    ErrorCode.EVENT_TYPE_SEMANTICS_INVALID,
+                    "$payload/source_version/prior_source_version_id",
+                    "direct-private source parent ID and digest must both be present or null",
+                )
+            )
+        if parent_id is None and same_family:
+            issues.append(
+                Issue(
+                    ErrorCode.DUPLICATE_ID,
+                    "$payload/source_version/source_family_id",
+                    "direct-private source family requires an exact parent binding",
+                )
+            )
+        if parent_id is not None:
+            parent = versions.get(parent_id)
+            if (
+                parent is None
+                or parent["case_id"] != record["case_id"]
+                or parent["payload"]["source_version"].get("source_family_id")
+                != version.get("source_family_id")
+                or parent["payload"]["source_version"].get("content_sha256") != parent_sha
+            ):
+                issues.append(
+                    Issue(
+                        ErrorCode.EVENT_REFERENCE_MISSING,
+                        "$payload/source_version/prior_source_version_id",
+                        "direct-private source revision requires an exact same-case parent",
+                    )
+                )
+        if any(
+            item["payload"].get("admission_manifest", {}).get("idempotency_key")
+            == manifest.get("idempotency_key")
+            for item in admissions
+        ):
+            issues.append(
+                Issue(
+                    ErrorCode.DUPLICATE_ID,
+                    "$payload/admission_manifest/idempotency_key",
+                    "direct-private admission idempotency key exists",
                 )
             )
         return issues
@@ -1694,6 +1955,17 @@ class SemanticLedger(HashChainedLedger):
     ) -> list[Issue]:
         issues: list[Issue] = []
         for issue in self.schemas.issues(schema_name, value):
+            suffix = issue.path[1:] if issue.path.startswith("$") else f"/{issue.path}"
+            issues.append(Issue(issue.code, f"{path}{suffix}", issue.message))
+        return issues
+
+    def _versioned_nested_schema_issues(
+        self, schema_name: str, value: dict[str, Any], path: str
+    ) -> list[Issue]:
+        """Validate an explicitly versioned nested S5-DP contract without fallback."""
+
+        issues: list[Issue] = []
+        for issue in self.schemas.issues_for_record(schema_name, value):
             suffix = issue.path[1:] if issue.path.startswith("$") else f"/{issue.path}"
             issues.append(Issue(issue.code, f"{path}{suffix}", issue.message))
         return issues

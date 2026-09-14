@@ -1,0 +1,21 @@
+{
+  "$id": "vault-next://schemas/v1/chat-ingress-source-version",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "byte_count": {"type": "integer"},
+    "captured_at": {"format": "date-time", "type": "string"},
+    "content_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "declared_extension": {"type": ["string", "null"]},
+    "declared_media_type": {"type": ["string", "null"]},
+    "ingress_kind": {"enum": ["paste", "attachment", "local_file", "acquired_link"], "type": "string"},
+    "object_ref": {"minLength": 1, "type": "string"},
+    "profile_id": {"enum": ["plain_text", "markdown_text", "docx_wordprocessingml"], "type": "string"},
+    "provenance_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "source_version_id": {"pattern": "^source_version_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}
+  },
+  "required": ["schema_version", "source_version_id", "content_sha256", "byte_count", "object_ref", "ingress_kind", "profile_id", "declared_media_type", "declared_extension", "provenance_sha256", "captured_at"],
+  "title": "Saved synthetic chat ingress source version",
+  "type": "object"
+}

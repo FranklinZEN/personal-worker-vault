@@ -1,0 +1,21 @@
+{
+  "$id": "vault-next://schemas/v1/events/chat-ingress-save-committed",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "chat_save_manifest": {"type": "object"},
+    "chat_save_manifest_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "chat_save_receipt": {"type": "object"},
+    "commit_manifest_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "debrief_artifact": {"type": "object"},
+    "evidence_packet": {"type": "object"},
+    "inactive_method_evidence": {"type": "object"},
+    "ingress_envelope": {"type": "object"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "source_version": {"type": "object"},
+    "source_version_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+  },
+  "required": ["schema_version", "chat_save_manifest", "chat_save_manifest_sha256", "chat_save_receipt", "ingress_envelope", "source_version", "source_version_sha256", "evidence_packet", "debrief_artifact", "inactive_method_evidence", "commit_manifest_sha256"],
+  "title": "Chat ingress save committed event payload",
+  "type": "object"
+}

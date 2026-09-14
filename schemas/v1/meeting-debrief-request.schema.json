@@ -1,0 +1,17 @@
+{
+  "$id": "vault-next://schemas/v1/meeting-debrief-request",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "disclosure_surface": {"const": "synthetic_fixture", "type": "string"},
+    "evidence_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "method_package": {"const": "meeting-debrief", "type": "string"},
+    "method_version": {"pattern": "^0\\.1\\.[0-9]+$", "type": "string"},
+    "no_effects": {"items": {"minLength": 1, "type": "string"}, "type": "array"},
+    "requested_sections": {"items": {"minLength": 1, "type": "string"}, "type": "array"},
+    "schema_version": {"const": "1.0", "type": "string"}
+  },
+  "required": ["schema_version", "method_package", "method_version", "evidence_sha256", "requested_sections", "disclosure_surface", "no_effects"],
+  "title": "Bounded synthetic Meeting Debrief request",
+  "type": "object"
+}

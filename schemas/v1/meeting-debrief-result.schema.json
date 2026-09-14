@@ -1,0 +1,26 @@
+{
+  "$id": "vault-next://schemas/v1/meeting-debrief-result",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "analytical_usefulness": {"const": "synthetic_mechanics_only", "type": "string"},
+    "candidate_lifecycle": {"const": "inactive", "type": "string"},
+    "debrief_id": {"pattern": "^meeting_debrief_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "evidence_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "execution_surface": {"const": "synthetic_fixture", "type": "string"},
+    "findings": {"items": {"type": "object"}, "type": "array"},
+    "limitations": {"items": {"minLength": 1, "type": "string"}, "type": "array"},
+    "method_package": {"const": "meeting-debrief", "type": "string"},
+    "method_version": {"pattern": "^0\\.1\\.[0-9]+$", "type": "string"},
+    "omissions": {"items": {"minLength": 1, "type": "string"}, "type": "array"},
+    "open_questions": {"items": {"minLength": 1, "type": "string"}, "type": "array"},
+    "persistence": {"const": "ephemeral", "type": "string"},
+    "result_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "suggested_followups": {"items": {"minLength": 1, "type": "string"}, "type": "array"},
+    "summary": {"type": "object"}
+  },
+  "required": ["schema_version", "debrief_id", "method_package", "method_version", "execution_surface", "analytical_usefulness", "evidence_sha256", "findings", "summary", "open_questions", "suggested_followups", "omissions", "limitations", "persistence", "candidate_lifecycle", "result_sha256"],
+  "title": "Synthetic cited Meeting Debrief result",
+  "type": "object"
+}

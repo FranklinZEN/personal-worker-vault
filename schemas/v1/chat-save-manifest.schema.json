@@ -1,0 +1,29 @@
+{
+  "$id": "vault-next://schemas/v1/chat-save-manifest",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "case_id": {"pattern": "^case_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "candidate_lifecycle": {"const": "inactive", "type": "string"},
+    "debrief_result_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "evidence_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "expires_at": {"format": "date-time", "type": "string"},
+    "idempotency_key": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "ingress_envelope_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "manifest_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "operations": {"items": {"minLength": 1, "type": "string"}, "type": "array"},
+    "profile_id": {"enum": ["plain_text", "markdown_text", "docx_wordprocessingml"], "type": "string"},
+    "purpose": {"const": "chat_ingress_save", "type": "string"},
+    "retention_policy_id": {"const": "synthetic_disposable", "type": "string"},
+    "runtime_id": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "save_id": {"pattern": "^chat_save_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "session_id": {"pattern": "^session_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "source_byte_count": {"type": "integer"},
+    "source_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "synthetic_only": {"const": true, "type": "boolean"}
+  },
+  "required": ["schema_version", "purpose", "save_id", "case_id", "session_id", "ingress_envelope_sha256", "source_sha256", "source_byte_count", "evidence_sha256", "debrief_result_sha256", "profile_id", "runtime_id", "retention_policy_id", "candidate_lifecycle", "idempotency_key", "operations", "synthetic_only", "expires_at", "manifest_digest"],
+  "title": "One-confirmation synthetic chat save manifest",
+  "type": "object"
+}
