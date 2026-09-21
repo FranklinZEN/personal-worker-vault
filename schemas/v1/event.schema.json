@@ -69,6 +69,8 @@
         "chat_ingress.save_committed",
         "direct_private_admission.recorded",
         "direct_private_admission.deactivated",
+        "private_admission.recorded",
+        "private_admission.deactivated",
         "knowledge.candidate_recorded",
         "knowledge.candidate_superseded",
         "knowledge.candidate_withdrawn",

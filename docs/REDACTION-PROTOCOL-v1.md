@@ -1,10 +1,11 @@
-# Redaction Protocol v1 — Candidate, Not Active
+# Redaction Protocol v1 — Approved Inactive Governance Protocol
 
-Status: Candidate only; no historical case is authorized for entry
+Status: Owner approved as inactive governance only; no historical case is authorized for entry
 Date: 2026-09-04
 
-This document is a P5 design artefact, not an approval to read, copy, transform, or import personal
-or legacy material. The protected legacy source and rollback backup remain out of scope.
+The owner approved this document on 2026-09-04 as an inactive governance protocol only. It is not an
+approval to read, copy, transform, or import personal or legacy material. The protected legacy source
+and rollback backup remain out of scope.
 
 ## Required procedure before any future redacted case
 
@@ -33,5 +34,6 @@ or legacy material. The protected legacy source and rollback backup remain out o
 
 ## Approval required
 
-This protocol must receive explicit owner approval, together with a separate exact-source and
-exact-purpose authorization, before it can be used. Until then it is an inactive candidate.
+This protocol has owner approval as inactive governance only. It still requires a separately approved
+exact-source and exact-purpose P7 authorization before it can be used, and cannot itself authorize
+source access.

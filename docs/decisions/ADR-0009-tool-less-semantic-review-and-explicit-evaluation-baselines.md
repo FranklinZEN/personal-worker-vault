@@ -1,6 +1,6 @@
 # ADR-0009: Keep Semantic Review Tool-less and Bind Evaluation Baselines Explicitly
 
-Status: Implemented under authorized P5 scope; evidence pending owner review
+Status: Owner approved; P5A and P7 remain unauthorized
 Date: 2026-09-04
 
 ## Context
@@ -61,6 +61,6 @@ Rejected. This would convert failures into unreviewable configuration drift.
 ## Approval boundary
 
 The repository owner authorized the roadmap's exact synthetic-only P5 scope on 2026-09-04. This ADR
-records the implemented contract for owner evidence review; it does not authorize P5A, migration,
+records the owner-approved contract; it does not authorize P5A, migration,
 personal-content review, model calls, external services, adapters, scheduling, background work, or
 draft-governance activation.

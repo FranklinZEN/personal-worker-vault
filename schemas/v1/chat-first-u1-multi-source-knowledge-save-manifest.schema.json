@@ -1,0 +1,28 @@
+{
+  "$id": "vault-next://schemas/v1/chat-first-u1-multi-source-knowledge-save-manifest",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Exact four-source knowledge-lineage U1 manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "1.0", "type": "string"},
+    "component": {"const": "vault-next-multi-source-knowledge-u1/1.0.0", "type": "string"},
+    "purpose": {"const": "chat_first_u1_multi_source_knowledge_save", "type": "string"},
+    "authority_id": {"const": "vault-next-local-confirmation/v2", "type": "string"},
+    "admission_id": {"pattern": "^private_admission_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "bundle_id": {"pattern": "^private_bundle_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "ingress_set_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "source_items": {"type": "array", "items": {"type": "object"}},
+    "u0_result_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "artifact_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "candidate_package_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "relationship_ledger_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "citations": {"type": "array", "items": {"type": "string"}},
+    "disclosure": {"const": "visible_hosted_reasoning", "type": "string"},
+    "retention": {"const": "R1_immutable", "type": "string"},
+    "operations": {"const": ["stage_immutable_source_set", "append_multi_source_knowledge_private_admission_event", "rebuild_local_fts5", "rebuild_private_workspace"], "type": "array"},
+    "expires_at": {"format": "date-time", "type": "string"},
+    "manifest_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+  },
+  "required": ["schema_version", "component", "purpose", "authority_id", "admission_id", "bundle_id", "ingress_set_sha256", "source_items", "u0_result_sha256", "artifact_sha256", "candidate_package_sha256", "relationship_ledger_sha256", "citations", "disclosure", "retention", "operations", "expires_at", "manifest_digest"]
+}

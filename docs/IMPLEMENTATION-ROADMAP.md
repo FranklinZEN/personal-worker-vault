@@ -1,6 +1,6 @@
 # Vault Next Implementation Roadmap
 
-Status: P5 implemented under synthetic-only scope; evidence awaiting owner review
+Status: P5 and P6 approved; P7 remains separately unauthorized
 Date: 2026-09-01
 
 ## Executive plan
@@ -498,7 +498,7 @@ authorized P5, which is implemented and evidenced below.
 
 ## P5 — Semantic review and evaluation foundation
 
-Status: Implemented under the authorized synthetic-only scope; evidence awaiting owner review.
+Status: Owner approved; P5A and P7 remain unauthorized.
 
 ### Approval record
 
@@ -532,11 +532,11 @@ Add qualitative guardrails and regression replay without granting the reviewer a
 
 ### Implementation status
 
-The authorized P5 foundation is implemented. Fixed review packets, immutable result/waiver records,
+The authorized P5 foundation is implemented and owner-approved. Fixed review packets, immutable result/waiver records,
 exact reviewed-hash enforcement, non-passing unavailability/retry handling, synthetic regression
 reports, and review-bound evaluation baselines are recorded in `docs/PHASE-5-EVIDENCE.md`. The
-candidate redaction protocol is deliberately inactive pending a separate owner/source/purpose
-authorization. P5A remains unauthorized.
+redaction protocol is owner-approved as inactive governance only, pending a separate exact
+owner/source/purpose P7 authorization. P5A and P7 remain unauthorized.
 
 ## P5A — Personal use-case profile program
 
@@ -584,6 +584,24 @@ others, and implementation may stop when measured value does not justify the nex
 
 ## P6 — Migration tooling
 
+Status: Owner approved; P7 remains separately unauthorized.
+
+### Authorization record
+
+The repository owner requested Phase 6 start in the Vault Next Codex conversation on 2026-09-04 and
+approved its evidence on 2026-09-04.
+Work is limited to the roadmap's synthetic legacy-tree scope. Phase 5 evidence and the candidate
+redaction protocol were pending owner review during P6 development; both are now approved, with the
+protocol remaining inactive governance only. Neither protected legacy root was in scope for P6
+development and neither is in scope for P7 without a separate exact authorization.
+
+### Implementation status
+
+The authorized synthetic-only P6 migration laboratory is implemented and evidenced in
+`docs/PHASE-6-EVIDENCE.md`. It refuses unmarked sources before discovery, uses staging-only dry runs,
+does not mutate canonical stores, and exposes a proposal-only pilot interface requiring normal policy
+approval. P7 remains unauthorized.
+
 ### Goal
 
 Implement read-only discovery, deterministic dry-run mapping, validation, exception reporting, and
@@ -611,6 +629,10 @@ logical rollback using synthetic legacy trees.
 - Dry run is deterministic and canonical stores remain untouched.
 
 ## P7 — Redacted pilot and migration wave
+
+Status: Not authorized. A completed and explicitly approved
+[`P7 pilot authorization request`](P7-PILOT-AUTHORIZATION-REQUEST.md) is required before any P7
+implementation or source access.
 
 ### Goal
 

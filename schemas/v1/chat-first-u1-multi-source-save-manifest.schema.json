@@ -1,0 +1,46 @@
+{
+  "$id": "vault-next://schemas/v1/chat-first-u1-multi-source-save-manifest",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "admission_id": {"pattern": "^private_admission_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "artifact_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "authority_id": {"const": "vault-next-local-confirmation/v2", "type": "string"},
+    "bundle_id": {"pattern": "^private_bundle_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "candidate_package_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "citations": {"items": {"minLength": 1, "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+    "component": {"const": "vault-next-multi-source-u1/1.0.0", "type": "string"},
+    "disclosure": {"const": "visible_hosted_reasoning", "type": "string"},
+    "expires_at": {"format": "date-time", "type": "string"},
+    "ingress_set_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "manifest_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "operations": {"const": ["stage_immutable_source_set", "append_multi_source_private_admission_event", "rebuild_local_fts5", "rebuild_private_workspace"], "type": "array"},
+    "purpose": {"const": "chat_first_u1_multi_source_save", "type": "string"},
+    "relationship_ledger_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "retention": {"const": "R1_immutable", "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "source_items": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "profile_id": {"const": "markdown_text", "type": "string"},
+          "provenance_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+          "role": {"enum": ["M1", "W1", "W2", "W3"], "type": "string"},
+          "safe_label": {"maxLength": 180, "minLength": 1, "type": "string"},
+          "source_locator": {"minLength": 1, "type": "string"},
+          "source_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+          "source_size": {"type": "integer"},
+          "source_version_id": {"pattern": "^source_version_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}
+        },
+        "required": ["role", "source_locator", "safe_label", "profile_id", "source_sha256", "source_size", "source_version_id", "provenance_sha256"],
+        "type": "object"
+      },
+      "minItems": 4,
+      "type": "array"
+    },
+    "u0_result_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+  },
+  "required": ["schema_version", "component", "purpose", "authority_id", "admission_id", "bundle_id", "ingress_set_sha256", "source_items", "u0_result_sha256", "artifact_sha256", "candidate_package_sha256", "relationship_ledger_sha256", "citations", "disclosure", "retention", "operations", "expires_at", "manifest_digest"],
+  "title": "Real-private ordered multi-source Chat-first U1 save manifest",
+  "type": "object"
+}

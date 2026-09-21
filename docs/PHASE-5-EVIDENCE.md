@@ -1,6 +1,6 @@
 # Vault Next Phase 5 Evidence
 
-Status: Technical gate passes; awaiting owner review
+Status: Owner approved
 Evidence date: 2026-09-04
 Scope: Exact roadmap P5 scope, synthetic fixtures only
 
@@ -12,7 +12,8 @@ the reviewer, and prevents required-review finalization until an exact pass or e
 Synthetic evaluation runs and baselines are immutable and baseline establishment/change requires an
 explicit reviewed-change record.
 
-This evidence requests owner review. It does not authorize P5A or any personal-content operation.
+The owner approved this evidence on 2026-09-04. That approval does not authorize P5A, P7, or any
+personal-content operation.
 
 ## Authorized boundary observed
 
@@ -79,10 +80,11 @@ The independent P5 fixture validates with zero findings:
 ## Known limits and next decision
 
 P5 supplies a deterministic interface and synthetic reviewer fixtures. It does not run a model or
-claim model-level semantic judgment. It does not activate the candidate redaction protocol, inspect
+claim model-level semantic judgment. It does not activate the redaction protocol, inspect
 personal material, create real profiles, migrate content, connect services, schedule follow-up, or
 perform external actions.
 
-The next decision is whether to approve the P5 evidence and separately decide whether the candidate
-redaction protocol is acceptable for a future, separately authorized redacted pilot. P5A remains
-unauthorized.
+The owner approved the P5 evidence and separately approved Redaction Protocol v1 as inactive
+governance only on 2026-09-04. P5A and P7 remain unauthorized. The protocol supplies no permission
+to access personal or legacy content; a completed, exact P7 pilot authorization must be approved
+before any source access begins.

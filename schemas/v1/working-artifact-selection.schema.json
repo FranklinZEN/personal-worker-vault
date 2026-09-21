@@ -1,0 +1,51 @@
+{
+  "$id": "vault-next://schemas/v1/working-artifact-selection",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifact_id": {"pattern": "^artifact_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "artifact_kind": {"enum": ["meeting_debrief", "meeting_continuity", "meeting_preparation", "work_continuity", "work_preparation", "deep_dive", "decision", "knowledge", "timeline", "outbound"], "type": "string"},
+    "citations": {"items": {"minLength": 1, "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+    "citation_bindings": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "anchor": {"minLength": 1, "type": "string"},
+          "evidence_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+        },
+        "required": ["anchor", "evidence_sha256"],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "component": {"const": "vault-next-working-artifact/0.2.0", "type": "string"},
+    "content_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "display_alias": {"maxLength": 240, "minLength": 1, "type": "string"},
+    "provenance": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+          "ref": {"minLength": 1, "type": "string"}
+        },
+        "required": ["ref", "digest"],
+        "type": "object"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "purpose": {"const": "chat_first_u1_save", "type": "string"},
+    "release_requires": {"const": "U2", "type": "string"},
+    "requires_confirmation": {"const": true, "type": "boolean"},
+    "revision_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "revision_number": {"type": "integer"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "selected_revision_id": {"pattern": "^artifact_version_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "selection_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "target_state": {"enum": ["review_copy", "final"], "type": "string"}
+  },
+  "required": ["schema_version", "component", "purpose", "artifact_id", "artifact_kind", "display_alias", "selected_revision_id", "revision_number", "revision_digest", "content_sha256", "citations", "citation_bindings", "provenance", "target_state", "requires_confirmation", "release_requires", "selection_digest"],
+  "title": "Exact working-artifact revision selected for U1",
+  "type": "object"
+}

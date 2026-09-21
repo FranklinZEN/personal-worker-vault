@@ -1,0 +1,16 @@
+{
+  "$id": "vault-next://schemas/v1/relationship-assertion",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "assertion_id": {"pattern": "^relationship_ledger_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "origin_version_id": {"minLength": 1, "type": "string"},
+    "source_anchor": {"minLength": 1, "type": "string"},
+    "state": {"enum": ["asserted", "reported", "inferred", "unavailable", "disputed"], "type": "string"},
+    "target_version_id": {"minLength": 1, "type": "string"},
+    "type": {"enum": ["debriefs", "prepares_for", "self_reviews", "follow_up_of", "summarizes", "derived_from", "about_meeting", "about_initiative", "references_actor", "reports_decision", "reports_commitment", "supports", "contradicts", "precedes", "supersedes", "has_revisit_condition"], "type": "string"}
+  },
+  "required": ["assertion_id", "origin_version_id", "target_version_id", "type", "source_anchor", "state"],
+  "title": "Synthetic F1 bounded relationship assertion",
+  "type": "object"
+}

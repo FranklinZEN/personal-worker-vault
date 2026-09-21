@@ -1,0 +1,27 @@
+{
+  "$id": "vault-next://schemas/v1/primary-artifact-package",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "component": {"const": "vault-next-primary-artifact/0.1.0", "type": "string"},
+    "context_selection_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "idempotency_key": {"maxLength": 256, "minLength": 1, "type": "string"},
+    "no_automatic_persistence": {"const": true, "type": "boolean"},
+    "package_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "package_revision": {"type": "integer"},
+    "primary": {"type": "object"},
+    "primary_first": {"const": true, "type": "boolean"},
+    "prior_package_digest": {"pattern": "^[0-9a-f]{64}$", "type": ["string", "null"]},
+    "relationships": {"items": {"type": "object"}, "type": "array"},
+    "request_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "retrieval_order": {"items": {"minLength": 1, "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "skill": {"type": "object"},
+    "supporting_artifacts": {"items": {"type": "object"}, "type": "array"},
+    "u1_requires_confirmation": {"const": true, "type": "boolean"},
+    "u2_authority": {"const": false, "type": "boolean"}
+  },
+  "required": ["schema_version", "component", "context_selection_digest", "skill", "package_revision", "prior_package_digest", "primary", "supporting_artifacts", "relationships", "retrieval_order", "primary_first", "no_automatic_persistence", "u1_requires_confirmation", "u2_authority", "idempotency_key", "request_digest", "package_digest"],
+  "title": "Ephemeral primary artifact and linked support package",
+  "type": "object"
+}

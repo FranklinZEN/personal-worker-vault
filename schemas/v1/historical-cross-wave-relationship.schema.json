@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "relationship_id", "relationship_version", "predecessor_digest", "subject_ref", "object_ref", "predicate", "basis_type", "evidence_refs", "status", "confidence", "effective_at", "conflicts", "omissions", "method_version", "candidate_only", "no_current_work", "relationship_digest"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "relationship_id": {"type": "string", "minLength": 1},
+    "relationship_version": {"type": "integer"},
+    "predecessor_digest": {"type": ["string", "null"], "pattern": "^[0-9a-f]{64}$"},
+    "subject_ref": {"type": "string", "minLength": 1},
+    "object_ref": {"type": "string", "minLength": 1},
+    "predicate": {"type": "string", "minLength": 1},
+    "basis_type": {"enum": ["exact_bytes", "export_declared", "explicit_reference", "timestamp_adjacency", "content_evidence", "bounded_analysis"]},
+    "evidence_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "status": {"enum": ["candidate", "source_reported", "structurally_verified", "rejected", "superseded"]},
+    "confidence": {"enum": ["high", "medium", "low", "unavailable"]},
+    "effective_at": {"type": ["string", "null"], "format": "date-time"},
+    "conflicts": {"type": "array", "items": {"type": "string"}},
+    "omissions": {"type": "array", "items": {"type": "string"}},
+    "method_version": {"const": "historical_cross_wave_reconciler/1.0.0"},
+    "candidate_only": {"const": true},
+    "no_current_work": {"const": true},
+    "relationship_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

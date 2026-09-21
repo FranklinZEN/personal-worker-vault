@@ -1,0 +1,22 @@
+{
+  "$id": "vault-next://schemas/v1/chat-first-u1-citation-recovery-signed-receipt",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Signed v2 receipt for append-only citation recovery",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "1.0", "type": "string"},
+    "receipt_type": {"const": "chat_first_u1_citation_recovery", "type": "string"},
+    "authority_id": {"const": "vault-next-local-confirmation/v2", "type": "string"},
+    "authority_bundle_id": {"pattern": "^bundle_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "algorithm": {"const": "ed25519", "type": "string"},
+    "key_id": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "receipt": {"type": "object"},
+    "manifest": {"type": "object"},
+    "manifest_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "confirmation_display_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "confirmed_at": {"format": "date-time", "type": "string"},
+    "signature_base64": {"type": "string"}
+  },
+  "required": ["schema_version", "receipt_type", "authority_id", "authority_bundle_id", "algorithm", "key_id", "receipt", "manifest", "manifest_digest", "confirmation_display_sha256", "confirmed_at", "signature_base64"]
+}

@@ -1,0 +1,25 @@
+{
+  "$id": "vault-next://schemas/v1/historical-migration-amendment-manifest",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object", "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "component": {"const": "vault-next-historical-migration-amendment/1.0.0"},
+    "purpose": {"const": "historical_migration_amendment"},
+    "authority_id": {"const": "vault-next-local-confirmation/v2"},
+    "admission_id": {"pattern": "^private_admission_[0-7][0-9A-HJKMNP-TV-Z]{25}$"},
+    "bundle_id": {"type": "string", "minLength": 1},
+    "parent_binding": {"type": "object"},
+    "package_digest": {"pattern": "^[0-9a-f]{64}$"},
+    "entry_ids": {"type": "array", "minItems": 3, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "owner_review_digest": {"pattern": "^[0-9a-f]{64}$"},
+    "disclosure": {"const": "local_private_exact_parent_append_only_amendment"},
+    "retention": {"const": "append_only_historical_migration_amendment"},
+    "operations": {"const": ["append_historical_migration_amendment", "build_amendment_fts5", "build_amendment_workspace"]},
+    "candidate_only": {"const": true},
+    "no_current_work": {"const": true},
+    "expires_at": {"format": "date-time"},
+    "manifest_digest": {"pattern": "^[0-9a-f]{64}$"}
+  },
+  "required": ["schema_version", "component", "purpose", "authority_id", "admission_id", "bundle_id", "parent_binding", "package_digest", "entry_ids", "owner_review_digest", "disclosure", "retention", "operations", "candidate_only", "no_current_work", "expires_at", "manifest_digest"]
+}

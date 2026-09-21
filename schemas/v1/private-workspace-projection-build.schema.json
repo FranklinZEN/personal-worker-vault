@@ -1,0 +1,16 @@
+{
+  "$id": "vault-next://schemas/v1/private-workspace-projection-build",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "build_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "component": {"const": "vault-next-private-workspace-projection/0.1.0", "type": "string"},
+    "no_source_fallback": {"const": true, "type": "boolean"},
+    "pages": {"items": {"type": "object"}, "minItems": 1, "type": "array"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "workspace_root_id": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+  },
+  "required": ["schema_version", "component", "workspace_root_id", "pages", "no_source_fallback", "build_digest"],
+  "title": "Real-private derived workspace build",
+  "type": "object"
+}

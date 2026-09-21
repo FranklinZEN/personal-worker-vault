@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "component", "purpose", "authority_id", "admission_id", "bundle_id", "family", "parent_event_id", "parent_manifest_digest", "catalogue_digest", "cutoff", "selected_member_refs", "logical_record_digests", "item_observation_digests", "conversation_observation_digests", "reconstruction_digest", "disclosure", "candidate_only", "operations", "expires_at", "manifest_digest"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "component": {"const": "vault-next-historical-activity-reconstruction/1.0.0"},
+    "purpose": {"const": "historical_activity_reconstruction"},
+    "authority_id": {"const": "vault-next-local-confirmation/v2"},
+    "admission_id": {"type": "string", "minLength": 1},
+    "bundle_id": {"type": "string", "minLength": 1},
+    "family": {"const": "meeting_workstream_history"},
+    "parent_event_id": {"type": "string", "minLength": 1},
+    "parent_manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "catalogue_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "cutoff": {"const": "2026-08-01T00:00:00Z"},
+    "selected_member_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "logical_record_digests": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}},
+    "item_observation_digests": {"type": "array", "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}},
+    "conversation_observation_digests": {"type": "array", "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}},
+    "reconstruction_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "cross_wave_reconciliation_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "disclosure": {"const": "hybrid_visible_hosted_exact_packs_local_private_storage"},
+    "candidate_only": {"const": true},
+    "operations": {"type": "array", "minItems": 3, "items": {"type": "string"}},
+    "expires_at": {"type": "string", "format": "date-time"},
+    "manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

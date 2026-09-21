@@ -1,0 +1,52 @@
+{
+  "$id": "vault-next://schemas/v1/historical-migration-amendment-package",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "record_type": {"const": "historical_migration_amendment_package/1.0"},
+    "component": {"const": "vault-next-historical-migration-amendment/1.0.0"},
+    "parent_binding": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "event_id": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$"},
+        "event_sha256": {"pattern": "^[0-9a-f]{64}$"},
+        "package_digest": {"pattern": "^[0-9a-f]{64}$"},
+        "receipt_id": {"pattern": "^receipt_[0-7][0-9A-HJKMNP-TV-Z]{25}$"}
+      },
+      "required": ["event_id", "event_sha256", "package_digest", "receipt_id"]
+    },
+    "owner_review": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "recorded_at": {"format": "date-time"},
+        "ratings": {"type": "array", "minItems": 5, "items": {"type": "object"}},
+        "choices": {"type": "array", "minItems": 5, "items": {"type": "object"}}
+      },
+      "required": ["recorded_at", "ratings", "choices"]
+    },
+    "entries": {
+      "type": "array", "minItems": 3,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "properties": {
+          "entry_id": {"type": "string", "minLength": 1},
+          "change_class": {"enum": ["decision_attribution", "strand_allocation"]},
+          "target_ref": {"type": "string", "minLength": 1},
+          "payload": {"type": "object"},
+          "evidence_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+        },
+        "required": ["entry_id", "change_class", "target_ref", "payload", "evidence_refs"]
+      }
+    },
+    "deferred_entries": {"type": "array", "minItems": 2, "items": {"type": "object"}},
+    "candidate_only": {"const": true},
+    "no_current_work": {"const": true},
+    "no_promotion": {"const": true},
+    "no_activation": {"const": true},
+    "parent_records_unchanged": {"const": true},
+    "package_digest": {"pattern": "^[0-9a-f]{64}$"}
+  },
+  "required": ["schema_version", "record_type", "component", "parent_binding", "owner_review", "entries", "deferred_entries", "candidate_only", "no_current_work", "no_promotion", "no_activation", "parent_records_unchanged", "package_digest"]
+}

@@ -1,0 +1,20 @@
+{
+  "$id": "vault-next://schemas/v1/synthetic-workspace-projection-manifest",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "build_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "component": {"const": "vault-next-workspace-projection/0.1.0", "type": "string"},
+    "do_not_edit": {"const": true, "type": "boolean"},
+    "no_source_fallback": {"const": true, "type": "boolean"},
+    "pages": {"items": {"type": "object"}, "minItems": 1, "type": "array"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "source_event_ids": {"items": {"minLength": 1, "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+    "source_watermark": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "synthetic_only": {"const": true, "type": "boolean"},
+    "workspace_root_id": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+  },
+  "required": ["schema_version", "synthetic_only", "component", "source_event_ids", "source_watermark", "workspace_root_id", "pages", "no_source_fallback", "do_not_edit", "build_digest"],
+  "title": "Synthetic P1 workspace projection build manifest",
+  "type": "object"
+}

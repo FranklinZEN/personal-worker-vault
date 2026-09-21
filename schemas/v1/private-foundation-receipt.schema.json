@@ -1,0 +1,19 @@
+{
+  "$id": "vault-next://schemas/v1/private-foundation-receipt",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "admission_id": {"pattern": "^private_admission_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "authority_id": {"const": "vault-next-local-confirmation/v2", "type": "string"},
+    "bundle_id": {"pattern": "^private_bundle_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "expires_at": {"format": "date-time", "type": "string"},
+    "issued_at": {"format": "date-time", "type": "string"},
+    "manifest_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "purpose": {"enum": ["chat_first_u1_save", "direct_private_snapshot_scope", "direct_private_source_admission"], "type": "string"},
+    "receipt_id": {"pattern": "^receipt_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"}
+  },
+  "required": ["schema_version", "receipt_id", "authority_id", "purpose", "admission_id", "bundle_id", "manifest_digest", "issued_at", "expires_at"],
+  "title": "Synthetic F1 purpose-specific private-admission receipt",
+  "type": "object"
+}

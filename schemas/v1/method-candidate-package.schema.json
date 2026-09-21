@@ -1,0 +1,39 @@
+{
+  "$id": "vault-next://schemas/v1/method-candidate-package",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "candidate_id": {"pattern": "^skill_candidate_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "family": {"const": "meeting_workflow", "type": "string"},
+    "ingress_profiles": {"items": {"enum": ["plain_text", "markdown_text", "docx_wordprocessingml"], "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+    "lifecycle": {"enum": ["inactive", "needs_refinement", "declined", "eligible_for_activation"], "type": "string"},
+    "method_source_markdown": {"minLength": 1, "type": "string"},
+    "method_source_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "members": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "candidate_id": {"pattern": "^skill_candidate_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+          "lifecycle": {"const": "inactive", "type": "string"},
+          "method_name": {"enum": ["meeting-prep", "meeting-self-review"], "type": "string"},
+          "method_source_markdown": {"minLength": 1, "type": "string"},
+          "method_source_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+          "method_version": {"pattern": "^0\\.[0-9]+\\.[0-9]+$", "type": "string"},
+          "portable_core": {"items": {"minLength": 1, "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+          "safe_label": {"minLength": 1, "type": "string"}
+        },
+        "required": ["candidate_id", "method_name", "method_version", "safe_label", "method_source_sha256", "method_source_markdown", "portable_core", "lifecycle"],
+        "type": "object"
+      },
+      "minItems": 2,
+      "type": "array"
+    },
+    "package_version": {"enum": ["0.3.0", "1.0", "1.1"], "type": "string"},
+    "prohibitions": {"items": {"minLength": 1, "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+    "required_sections": {"items": {"minLength": 1, "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+    "schema_version": {"const": "1.0", "type": "string"}
+  },
+  "required": ["schema_version", "candidate_id", "family", "package_version", "ingress_profiles", "required_sections", "prohibitions", "lifecycle"],
+  "title": "Synthetic F1 inactive method candidate package",
+  "type": "object"
+}

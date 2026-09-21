@@ -92,11 +92,13 @@ class ContentProfileRouter:
         *,
         max_material_bytes: int = _MAX_MATERIAL_BYTES,
         max_zip_total_uncompressed: int = _MAX_ZIP_TOTAL_UNCOMPRESSED,
+        max_anchors: int = _MAX_ANCHORS,
     ) -> None:
-        if max_material_bytes < 1 or max_zip_total_uncompressed < 1:
+        if max_material_bytes < 1 or max_zip_total_uncompressed < 1 or max_anchors < 1:
             raise ValueError("content profile limits must be positive")
         self.max_material_bytes = max_material_bytes
         self.max_zip_total_uncompressed = max_zip_total_uncompressed
+        self.max_anchors = max_anchors
 
     def route(
         self,
@@ -125,7 +127,9 @@ class ContentProfileRouter:
             or (declared_extension or "").casefold() in {".md", ".markdown"}
             else "plain_text"
         )
-        return _normalized(profile, text, _text_units(text, markdown=profile == "markdown_text"))
+        return _normalized(
+            profile, text, _text_units(text, markdown=profile == "markdown_text"), max_anchors=self.max_anchors
+        )
 
     def _route_docx(self, material: bytes) -> NormalizedContent:
         entries = _safe_docx_entries(
@@ -148,7 +152,9 @@ class ContentProfileRouter:
         if not paragraphs:
             raise ContentProfileError("DOCX fixture has no extractable paragraph text")
         units = [(f"paragraph:{index:06d}", text) for index, text in enumerate(paragraphs, start=1)]
-        return _normalized("docx_wordprocessingml", "\n".join(paragraphs), units)
+        return _normalized(
+            "docx_wordprocessingml", "\n".join(paragraphs), units, max_anchors=self.max_anchors
+        )
 
 
 def _looks_like_zip(material: bytes) -> bool:
@@ -271,6 +277,8 @@ def _normalized(
     profile_id: str,
     normalized_text: str,
     units: Iterable[tuple[str, str]],
+    *,
+    max_anchors: int = _MAX_ANCHORS,
 ) -> NormalizedContent:
     anchors: list[EvidenceAnchor] = []
     omissions: list[dict[str, str | None]] = []
@@ -280,7 +288,7 @@ def _normalized(
             omissions.append({"anchor": anchor, "reason": "unit_exceeds_chat_profile_budget"})
             continue
         anchors.append(EvidenceAnchor(anchor, ordinal, text, sha256_hex(data)))
-        if len(anchors) > _MAX_ANCHORS:
+        if len(anchors) > max_anchors:
             raise ContentProfileError("ingress content has too many citation units")
     if not anchors:
         raise ContentProfileError("ingress content has no bounded citation units")

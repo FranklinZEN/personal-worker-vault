@@ -1,0 +1,55 @@
+{
+  "$id": "vault-next://schemas/v1/chat-first-u1-primary-artifact-retrofit-manifest",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Batched append-only primary-artifact retrofit U1 manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "1.0", "type": "string"},
+    "component": {"const": "vault-next-primary-artifact-retrofit/1.0.0", "type": "string"},
+    "purpose": {"const": "chat_first_u1_primary_artifact_retrofit", "type": "string"},
+    "authority_id": {"const": "vault-next-local-confirmation/v2", "type": "string"},
+    "admission_id": {"pattern": "^private_admission_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "bundle_id": {"pattern": "^private_bundle_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "retrofits": {
+      "type": "array",
+      "minItems": 3,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["wave_id", "parent_event_id", "parent_event_sha256", "support_event_ids", "primary_artifact_id", "primary_revision_id", "primary_revision_number", "primary_artifact_kind", "primary_display_alias", "primary_markdown_sha256", "citation_companion_sha256", "support_package_sha256"],
+        "properties": {
+          "wave_id": {"enum": ["S6-W1", "S6-W2", "S6-W3"], "type": "string"},
+          "parent_event_id": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+          "parent_event_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+          "support_event_ids": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["event_id", "event_sha256"],
+              "properties": {
+                "event_id": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+                "event_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+              }
+            }
+          },
+          "primary_artifact_id": {"pattern": "^artifact_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+          "primary_revision_id": {"pattern": "^artifact_version_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+          "primary_revision_number": {"type": "integer"},
+          "primary_artifact_kind": {"enum": ["meeting_debrief", "work_continuity", "deep_dive"], "type": "string"},
+          "primary_display_alias": {"minLength": 1, "type": "string"},
+          "primary_markdown_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+          "citation_companion_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+          "support_package_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+        }
+      }
+    },
+    "disclosure": {"const": "visible_hosted_reasoning_fixed_admitted_scope", "type": "string"},
+    "retention": {"const": "append_only_primary_artifact_retrofit", "type": "string"},
+    "operations": {"const": ["stage_three_primary_artifacts", "append_one_retrofit_event", "build_primary_first_fts5", "build_primary_first_workspace"], "type": "array"},
+    "expires_at": {"format": "date-time", "type": "string"},
+    "manifest_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+  },
+  "required": ["schema_version", "component", "purpose", "authority_id", "admission_id", "bundle_id", "retrofits", "disclosure", "retention", "operations", "expires_at", "manifest_digest"]
+}

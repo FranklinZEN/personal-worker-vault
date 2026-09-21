@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "component", "purpose", "authority_id", "admission_id", "bundle_id", "lanes", "members", "exclusions", "disclosure", "retention", "operations", "expires_at", "manifest_digest"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "component": {"const": "vault-next-archive-preservation/1.0.0"},
+    "purpose": {"const": "archive_preservation"},
+    "authority_id": {"const": "vault-next-local-confirmation/v2"},
+    "admission_id": {"type": "string", "minLength": 1},
+    "bundle_id": {"type": "string", "minLength": 1},
+    "lanes": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false, "required": ["lane_id", "source_class", "source_label", "source_scope_sha256"], "properties": {"lane_id": {"type": "string", "pattern": "^[a-z0-9_]+$"}, "source_class": {"enum": ["legacy_vault", "claude_export", "codex_export"]}, "source_label": {"type": "string", "minLength": 1}, "source_scope_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}}},
+    "members": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false, "required": ["lane_id", "member_id", "relative_locator", "byte_count", "content_sha256", "profile", "disposition", "duplicate_group"], "properties": {"lane_id": {"type": "string"}, "member_id": {"type": "string", "minLength": 1}, "relative_locator": {"type": "string", "minLength": 1}, "byte_count": {"type": "integer"}, "content_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "profile": {"type": "string", "minLength": 1}, "disposition": {"const": "preserved"}, "duplicate_group": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}}},
+    "exclusions": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["lane_id", "member_id", "relative_locator", "disposition", "unresolved_link_text_sha256"], "properties": {"lane_id": {"type": "string"}, "member_id": {"type": "string", "pattern": "^symlink:.+"}, "relative_locator": {"type": "string", "minLength": 1}, "disposition": {"const": "excluded_unsafe_symlink"}, "unresolved_link_text_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}}}},
+    "disclosure": {"const": "local_only_no_content_index"},
+    "retention": {"const": "append_only_archive_preservation"},
+    "operations": {"type": "array", "minItems": 3, "items": {"type": "string"}},
+    "expires_at": {"type": "string", "format": "date-time"},
+    "manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

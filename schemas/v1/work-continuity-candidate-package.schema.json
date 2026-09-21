@@ -1,0 +1,20 @@
+{
+  "$id": "vault-next://schemas/v1/work-continuity-candidate-package",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "candidate_id": {"pattern": "^skill_candidate_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "family": {"const": "work_continuity", "type": "string"},
+    "lifecycle": {"const": "inactive", "type": "string"},
+    "method_name": {"const": "state-check", "type": "string"},
+    "method_source_markdown": {"minLength": 1, "type": "string"},
+    "method_source_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "method_version": {"pattern": "^0\\.[0-9]+\\.[0-9]+$", "type": "string"},
+    "portable_core": {"items": {"minLength": 1, "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+    "prohibitions": {"items": {"minLength": 1, "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+    "schema_version": {"const": "1.0", "type": "string"}
+  },
+  "required": ["schema_version", "candidate_id", "family", "method_name", "method_version", "method_source_sha256", "method_source_markdown", "portable_core", "prohibitions", "lifecycle"],
+  "title": "Inactive work-continuity method candidate package",
+  "type": "object"
+}

@@ -1,0 +1,86 @@
+{
+  "$id": "vault-next://schemas/v1/working-artifact-session",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "artifacts": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "artifact_id": {"pattern": "^artifact_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+          "artifact_kind": {"enum": ["meeting_debrief", "meeting_continuity", "meeting_preparation", "work_continuity", "work_preparation", "deep_dive", "decision", "knowledge", "timeline", "outbound"], "type": "string"},
+          "current_revision_id": {"pattern": "^artifact_version_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+          "display_alias": {"maxLength": 240, "minLength": 1, "type": "string"},
+          "lifecycle_state": {"const": "working", "type": "string"},
+          "revisions": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "artifact_id": {"pattern": "^artifact_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+                "change_summary": {"maxLength": 2048, "minLength": 1, "type": "string"},
+                "citations": {"items": {"minLength": 1, "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+                "citation_bindings": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "anchor": {"minLength": 1, "type": "string"},
+                      "evidence_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+                    },
+                    "required": ["anchor", "evidence_sha256"],
+                    "type": "object"
+                  },
+                  "minItems": 1,
+                  "type": "array"
+                },
+                "content_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+                "created_at": {"format": "date-time", "type": "string"},
+                "evidence_relative_path": {"pattern": "^artifacts/artifact_[0-7][0-9A-HJKMNP-TV-Z]{25}/revisions/[0-9]{4}-artifact_version_[0-7][0-9A-HJKMNP-TV-Z]{25}\\.citations\\.md$", "type": "string"},
+                "evidence_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+                "idempotency_key": {"maxLength": 256, "minLength": 1, "type": "string"},
+                "metadata_relative_path": {"pattern": "^artifacts/artifact_[0-7][0-9A-HJKMNP-TV-Z]{25}/revisions/[0-9]{4}-artifact_version_[0-7][0-9A-HJKMNP-TV-Z]{25}\\.metadata\\.json$", "type": "string"},
+                "presentation_profile": {"const": "clean_markdown_sidecar/v1", "type": "string"},
+                "prior_revision_id": {"pattern": "^artifact_version_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": ["string", "null"]},
+                "provenance": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+                      "ref": {"minLength": 1, "type": "string"}
+                    },
+                    "required": ["ref", "digest"],
+                    "type": "object"
+                  },
+                  "minItems": 1,
+                  "type": "array"
+                },
+                "relative_path": {"pattern": "^artifacts/artifact_[0-7][0-9A-HJKMNP-TV-Z]{25}/revisions/[0-9]{4}-artifact_version_[0-7][0-9A-HJKMNP-TV-Z]{25}\\.md$", "type": "string"},
+                "request_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+                "revision_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+                "revision_id": {"pattern": "^artifact_version_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+                "revision_number": {"type": "integer"}
+              },
+              "required": ["revision_id", "artifact_id", "revision_number", "prior_revision_id", "content_sha256", "citations", "citation_bindings", "provenance", "change_summary", "created_at", "relative_path", "idempotency_key", "request_digest", "revision_digest"],
+              "type": "object"
+            },
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": ["artifact_id", "artifact_kind", "display_alias", "lifecycle_state", "current_revision_id", "revisions"],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "component": {"enum": ["vault-next-working-artifact/0.1.0", "vault-next-working-artifact/0.2.0"], "type": "string"},
+    "manifest_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "no_automatic_persistence": {"const": true, "type": "boolean"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "session_id": {"pattern": "^session_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "u1_states": {"const": ["review_copy", "final"], "type": "array"},
+    "u2_state": {"const": "released", "type": "string"},
+    "workbench_root_id": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+  },
+  "required": ["schema_version", "component", "session_id", "workbench_root_id", "artifacts", "no_automatic_persistence", "u1_states", "u2_state", "manifest_digest"],
+  "title": "Ephemeral host-neutral working-artifact session",
+  "type": "object"
+}

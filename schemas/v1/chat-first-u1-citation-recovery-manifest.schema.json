@@ -1,0 +1,42 @@
+{
+  "$id": "vault-next://schemas/v1/chat-first-u1-citation-recovery-manifest",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Append-only citation recovery U1 manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "1.0", "type": "string"},
+    "component": {"const": "vault-next-citation-recovery/1.0.0", "type": "string"},
+    "purpose": {"const": "chat_first_u1_citation_recovery", "type": "string"},
+    "authority_id": {"const": "vault-next-local-confirmation/v2", "type": "string"},
+    "admission_id": {"pattern": "^private_admission_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "bundle_id": {"pattern": "^private_bundle_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "parent_event_id": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "parent_artifact_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "source_items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "source_sha256", "source_version_id", "profile_id"],
+        "properties": {
+          "role": {"enum": ["M1", "W1", "W2", "W3"], "type": "string"},
+          "source_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+          "source_version_id": {"pattern": "^source_version_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+          "profile_id": {"const": "markdown_text", "type": "string"}
+        }
+      }
+    },
+    "audit_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "supplement_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "claim_count": {"type": "integer"},
+    "recovered_claim_count": {"type": "integer"},
+    "withheld_claim_count": {"type": "integer"},
+    "disclosure": {"const": "local_private_no_hosted_reasoning", "type": "string"},
+    "retention": {"const": "R1_immutable_parent_plus_recovery", "type": "string"},
+    "operations": {"const": ["stage_citation_recovery", "append_citation_recovery_event", "rebuild_recovery_fts5", "build_recovery_projections"], "type": "array"},
+    "expires_at": {"format": "date-time", "type": "string"},
+    "manifest_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"}
+  },
+  "required": ["schema_version", "component", "purpose", "authority_id", "admission_id", "bundle_id", "parent_event_id", "parent_artifact_sha256", "source_items", "audit_sha256", "supplement_sha256", "claim_count", "recovered_claim_count", "withheld_claim_count", "disclosure", "retention", "operations", "expires_at", "manifest_digest"]
+}

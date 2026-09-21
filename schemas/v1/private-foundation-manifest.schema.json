@@ -1,0 +1,27 @@
+{
+  "$id": "vault-next://schemas/v1/private-foundation-manifest",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "admission_id": {"pattern": "^private_admission_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "bundle_id": {"pattern": "^private_bundle_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "candidate_package_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "disclosure": {"enum": ["visible_hosted_reasoning"], "type": "string"},
+    "evidence_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "expires_at": {"format": "date-time", "type": "string"},
+    "manifest_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "operations": {"items": {"minLength": 1, "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+    "profile_id": {"enum": ["plain_text", "markdown_text", "docx_wordprocessingml"], "type": "string"},
+    "purpose": {"enum": ["chat_first_u1_save", "direct_private_snapshot_scope", "direct_private_source_admission"], "type": "string"},
+    "relationship_ledger_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "result_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "runtime_id": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "session_id": {"pattern": "^session_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "source_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "source_size": {"type": "integer"}
+  },
+  "required": ["schema_version", "purpose", "admission_id", "bundle_id", "session_id", "runtime_id", "source_sha256", "source_size", "evidence_sha256", "result_sha256", "profile_id", "candidate_package_sha256", "relationship_ledger_sha256", "disclosure", "operations", "expires_at", "manifest_digest"],
+  "title": "Synthetic F1 parallel private-admission manifest",
+  "type": "object"
+}

@@ -1,0 +1,17 @@
+{
+  "$id": "vault-next://schemas/v1/historical-owner-confirmed-continuity-supplement-manifest",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object", "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "1.0"}, "component": {"const": "vault-next-historical-owner-context/1.0.0"},
+    "purpose": {"const": "historical_owner_confirmed_continuity_supplement"}, "authority_id": {"const": "vault-next-local-confirmation/v2"},
+    "admission_id": {"pattern": "^private_admission_[0-7][0-9A-HJKMNP-TV-Z]{25}$"}, "bundle_id": {"type": "string", "minLength": 1},
+    "parent_bindings": {"type": "array", "minItems": 4, "items": {"type": "object", "additionalProperties": false, "properties": {"event_id": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$"}, "event_sha256": {"pattern": "^[0-9a-f]{64}$"}, "package_digest": {"pattern": "^[0-9a-f]{64}$"}, "primary_artifact_digest": {"pattern": "^[0-9a-f]{64}$"}, "coverage_digest": {"pattern": "^[0-9a-f]{64}$"}, "relationship_digest": {"pattern": "^[0-9a-f]{64}$"}, "workspace_digest": {"pattern": "^[0-9a-f]{64}$"}}, "required": ["event_id", "event_sha256", "package_digest", "primary_artifact_digest", "coverage_digest", "relationship_digest", "workspace_digest"]}},
+    "parent_set_digest": {"pattern": "^[0-9a-f]{64}$"}, "supplement_sha256": {"pattern": "^[0-9a-f]{64}$"}, "markdown_sha256": {"pattern": "^[0-9a-f]{64}$"},
+    "statement_ids": {"type": "array", "minItems": 4, "items": {"type": "string", "minLength": 1}}, "owner_context_statements": {"type": "array", "minItems": 4, "items": {"type": "object"}},
+    "disclosure": {"const": "local_private_owner_confirmed_context_fixed_admitted_scope"}, "retention": {"const": "append_only_owner_confirmed_historical_context"},
+    "operations": {"const": ["stage_owner_confirmed_continuity_supplement", "append_owner_confirmed_continuity_event", "build_owner_context_fts5", "build_owner_context_workspace"]},
+    "candidate_only": {"const": true}, "no_current_work_adoption": {"const": true}, "expires_at": {"format": "date-time"}, "manifest_digest": {"pattern": "^[0-9a-f]{64}$"}
+  },
+  "required": ["schema_version", "component", "purpose", "authority_id", "admission_id", "bundle_id", "parent_bindings", "parent_set_digest", "supplement_sha256", "markdown_sha256", "statement_ids", "owner_context_statements", "disclosure", "retention", "operations", "candidate_only", "no_current_work_adoption", "expires_at", "manifest_digest"]
+}

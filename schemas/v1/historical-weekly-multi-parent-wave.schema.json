@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "component", "wave_id", "week_start", "week_end", "parent_set_digest", "catalogue_set_digest", "completeness", "observation_digests", "strands", "projects", "decisions", "inventory", "views", "chronology_creates_relationships", "no_observed_movement_is_not_stalled", "candidate_only", "no_current_work", "no_promotion", "no_activation", "no_u2", "wave_digest"],
+  "properties": {
+    "schema_version": {"const": "1.0"}, "component": {"const": "vault-next-historical-weekly-multi-parent-wave/1.0.0"},
+    "wave_id": {"type": "string", "minLength": 1}, "week_start": {"type": "string", "format": "date-time"},
+    "week_end": {"type": "string", "format": "date-time"},
+    "parent_set_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "catalogue_set_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "completeness": {"enum": ["partial", "complete", "exception_pending"]},
+    "observation_digests": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}},
+    "strands": {"type": "array", "items": {"type": "object"}}, "projects": {"type": "array", "items": {"type": "object"}},
+    "decisions": {"type": "array", "items": {"type": "object"}}, "inventory": {"type": "object"}, "views": {"type": "object"},
+    "chronology_creates_relationships": {"const": false}, "no_observed_movement_is_not_stalled": {"const": true},
+    "candidate_only": {"const": true}, "no_current_work": {"const": true}, "no_promotion": {"const": true},
+    "no_activation": {"const": true}, "no_u2": {"const": true},
+    "wave_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

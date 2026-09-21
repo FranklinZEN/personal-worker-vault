@@ -430,6 +430,77 @@ class MacOSDirectPrivateConfirmationUI:
         )
 
 
+class ChatFirstU1SaveNativeLauncher(Protocol):
+    """The only local UI surface for an ordinary generated Chat-first U1 proposal."""
+
+    def open_textedit(self, display_path: Path) -> bool: ...
+
+    def request_digest(self, *, expected_manifest_digest: str) -> str: ...
+
+
+class ChatFirstU1SaveConfirmationUI(Protocol):
+    """Exact-digest confirmation for the purpose-limited Chat-first U1 receipt."""
+
+    def confirm(self, display_path: Path, *, expected_manifest_digest: str) -> str: ...
+
+
+class MacOSChatFirstU1SaveLauncher:
+    """Open only the generated local proposal and prompt for its exact digest."""
+
+    open_executable = "/usr/bin/open"
+    osascript_executable = "/usr/bin/osascript"
+
+    def open_textedit(self, display_path: Path) -> bool:
+        result = subprocess.run(
+            [self.open_executable, "-a", "TextEdit", str(display_path)],
+            check=False,
+            capture_output=True,
+        )
+        return result.returncode == 0
+
+    def request_digest(self, *, expected_manifest_digest: str) -> str:
+        script = "\n".join(
+            (
+                "on run argv",
+                "    set expectedDigest to item 1 of argv",
+                "    try",
+                '        set promptText to "Vault Next requests a local Save to Vault Next confirmation." & ¬',
+                '            "\\n\\nThe complete generated proposal is open in TextEdit." & ¬',
+                '            " Review it, then type its full manifest digest below." & ¬',
+                '            "\\n\\nExpected digest:\\n"',
+                "        set answerText to text returned of (display dialog (promptText & expectedDigest) ¬",
+                '            default answer "" buttons {"Reject", "Approve"} default button "Approve" ¬',
+                '            cancel button "Reject" with title "Vault Next local confirmation" with icon caution)',
+                "        return answerText",
+                "    on error number -128",
+                '        return ""',
+                "    end try",
+                "end run",
+            )
+        )
+        result = subprocess.run(
+            [self.osascript_executable, "-e", script, expected_manifest_digest],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            return ""
+        return result.stdout.strip()
+
+
+class MacOSChatFirstU1SaveConfirmationUI:
+    """Fakeable native exact-digest route for one generated U1 save proposal."""
+
+    def __init__(self, launcher: ChatFirstU1SaveNativeLauncher | None = None) -> None:
+        self.launcher = launcher if launcher is not None else MacOSChatFirstU1SaveLauncher()
+
+    def confirm(self, display_path: Path, *, expected_manifest_digest: str) -> str:
+        if not self.launcher.open_textedit(display_path):
+            raise LocalConfirmationV2Error("Chat-first U1 confirmation display could not be opened")
+        return self.launcher.request_digest(expected_manifest_digest=expected_manifest_digest)
+
+
 @dataclass(frozen=True)
 class DurableLocalAuthority:
     """Issue a local signed receipt for one immutable v3 transaction manifest."""
@@ -442,6 +513,7 @@ class DurableLocalAuthority:
     id_factory: ULIDFactory = field(default_factory=lambda: DEFAULT_FACTORY)
     clock: Callable[[], datetime] = aware_utc_now
     direct_private_confirmation_ui: DirectPrivateConfirmationUI | None = None
+    chat_first_u1_save_confirmation_ui: ChatFirstU1SaveConfirmationUI | None = None
 
     def __post_init__(self) -> None:
         root = self.authority_root.resolve()
@@ -512,6 +584,1207 @@ class DurableLocalAuthority:
             self.paths.evidence_root / "local-confirmation-v2" / "direct-private" / purpose
             / "displays"
         )
+
+    @property
+    def chat_first_u1_save_receipt_root(self) -> Path:
+        """Keep ordinary U1 receipts separate from every existing v2 purpose domain."""
+
+        return self.paths.ensure_runtime_write_target(
+            self.paths.evidence_root / "local-confirmation-v2" / "chat-first-u1-save" / "receipts"
+        )
+
+    @property
+    def chat_first_u1_save_display_root(self) -> Path:
+        return self.paths.ensure_runtime_write_target(
+            self.paths.evidence_root / "local-confirmation-v2" / "chat-first-u1-save" / "displays"
+        )
+
+    @property
+    def chat_first_u1_multi_source_save_receipt_root(self) -> Path:
+        """Keep ordered multi-source U1 receipts separate from ordinary one-source saves."""
+
+        return self.paths.ensure_runtime_write_target(
+            self.paths.evidence_root / "local-confirmation-v2" / "chat-first-u1-multi-source-save" / "receipts"
+        )
+
+    @property
+    def chat_first_u1_multi_source_save_display_root(self) -> Path:
+        return self.paths.ensure_runtime_write_target(
+            self.paths.evidence_root / "local-confirmation-v2" / "chat-first-u1-multi-source-save" / "displays"
+        )
+
+    @property
+    def chat_first_u1_multi_source_knowledge_save_receipt_root(self) -> Path:
+        """Keep knowledge-lineage U1 receipts physically separate from work-continuity U1."""
+
+        return self.paths.ensure_runtime_write_target(
+            self.paths.evidence_root / "local-confirmation-v2"
+            / "chat-first-u1-multi-source-knowledge-save" / "receipts"
+        )
+
+    @property
+    def chat_first_u1_multi_source_knowledge_save_display_root(self) -> Path:
+        return self.paths.ensure_runtime_write_target(
+            self.paths.evidence_root / "local-confirmation-v2"
+            / "chat-first-u1-multi-source-knowledge-save" / "displays"
+        )
+
+    @property
+    def chat_first_u1_citation_recovery_receipt_root(self) -> Path:
+        """Keep append-only recovery receipts separate from every save purpose."""
+
+        return self.paths.ensure_runtime_write_target(
+            self.paths.evidence_root / "local-confirmation-v2" / "chat-first-u1-citation-recovery" / "receipts"
+        )
+
+    @property
+    def chat_first_u1_citation_recovery_display_root(self) -> Path:
+        return self.paths.ensure_runtime_write_target(
+            self.paths.evidence_root / "local-confirmation-v2" / "chat-first-u1-citation-recovery" / "displays"
+        )
+
+    @property
+    def chat_first_u1_primary_artifact_retrofit_receipt_root(self) -> Path:
+        """Keep the batched presentation retrofit separate from all save/recovery purposes."""
+
+        return self.paths.ensure_runtime_write_target(
+            self.paths.evidence_root / "local-confirmation-v2"
+            / "chat-first-u1-primary-artifact-retrofit" / "receipts"
+        )
+
+    @property
+    def chat_first_u1_primary_artifact_retrofit_display_root(self) -> Path:
+        return self.paths.ensure_runtime_write_target(
+            self.paths.evidence_root / "local-confirmation-v2"
+            / "chat-first-u1-primary-artifact-retrofit" / "displays"
+        )
+
+    @property
+    def archive_preservation_receipt_root(self) -> Path:
+        """Keep opaque archival-preservation evidence separate from every U1 save purpose."""
+
+        return self.paths.ensure_runtime_write_target(
+            self.paths.evidence_root / "local-confirmation-v2" / "archive-preservation" / "receipts"
+        )
+
+    @property
+    def archive_preservation_display_root(self) -> Path:
+        return self.paths.ensure_runtime_write_target(
+            self.paths.evidence_root / "local-confirmation-v2" / "archive-preservation" / "displays"
+        )
+
+    @property
+    def historical_activity_reconstruction_receipt_root(self) -> Path:
+        """Keep historical candidate migration receipts separate from archive preservation."""
+
+        return self.paths.ensure_runtime_write_target(
+            self.paths.evidence_root / "local-confirmation-v2"
+            / "historical-activity-reconstruction" / "receipts"
+        )
+
+    @property
+    def historical_activity_reconstruction_display_root(self) -> Path:
+        return self.paths.ensure_runtime_write_target(
+            self.paths.evidence_root / "local-confirmation-v2"
+            / "historical-activity-reconstruction" / "displays"
+        )
+
+    @property
+    def historical_weekly_activity_reconstruction_receipt_root(self) -> Path:
+        """Keep additive multi-parent weekly receipts separate from single-parent H2."""
+
+        return self.paths.ensure_runtime_write_target(
+            self.paths.evidence_root / "local-confirmation-v2"
+            / "historical-weekly-activity-reconstruction" / "receipts"
+        )
+
+    @property
+    def historical_weekly_activity_reconstruction_display_root(self) -> Path:
+        return self.paths.ensure_runtime_write_target(
+            self.paths.evidence_root / "local-confirmation-v2"
+            / "historical-weekly-activity-reconstruction" / "displays"
+        )
+
+    @property
+    def historical_owner_confirmed_continuity_supplement_receipt_root(self) -> Path:
+        """Keep owner-confirmed historical context separate from source-extracted migration."""
+
+        return self.paths.ensure_runtime_write_target(
+            self.paths.evidence_root / "local-confirmation-v2"
+            / "historical-owner-confirmed-continuity-supplement" / "receipts"
+        )
+
+    @property
+    def historical_owner_confirmed_continuity_supplement_display_root(self) -> Path:
+        return self.paths.ensure_runtime_write_target(
+            self.paths.evidence_root / "local-confirmation-v2"
+            / "historical-owner-confirmed-continuity-supplement" / "displays"
+        )
+
+    @property
+    def historical_migration_amendment_receipt_root(self) -> Path:
+        """Keep source-grounded migration amendments separate from owner context."""
+
+        return self.paths.ensure_runtime_write_target(
+            self.paths.evidence_root / "local-confirmation-v2"
+            / "historical-migration-amendment" / "receipts"
+        )
+
+    @property
+    def historical_migration_amendment_display_root(self) -> Path:
+        return self.paths.ensure_runtime_write_target(
+            self.paths.evidence_root / "local-confirmation-v2"
+            / "historical-migration-amendment" / "displays"
+        )
+
+    def authorize_chat_first_u1_save(self, manifest: dict[str, Any]) -> dict[str, Any]:
+        """Confirm and sign one complete generated Chat-first U1 save proposal.
+
+        This purpose can use an existing v2 identity only. It has no generic signing, bootstrap,
+        transaction, direct-private, source-capture, or publication capability.
+        """
+
+        _require_chat_first_u1_save_manifest(manifest, self.schemas)
+        now = self.clock()
+        if now.tzinfo is None or now.utcoffset() is None:
+            raise ValueError("clock must return a timezone-aware instant")
+        expires_at = _parse_timestamp(manifest["expires_at"])
+        if expires_at <= now.astimezone(UTC):
+            raise LocalConfirmationV2Error("cannot confirm an expired Chat-first U1 manifest")
+        if self.chat_first_u1_save_confirmation_ui is None:
+            raise LocalConfirmationV2Error("Chat-first U1 native confirmation UI is not configured")
+        identity, authority = self._signing_identity(allow_create=False)
+        receipt = {
+            "schema_version": "1.0",
+            "receipt_id": self.id_factory.new("receipt"),
+            "authority_id": AUTHORITY_ID_V2,
+            "purpose": "chat_first_u1_save",
+            "admission_id": manifest["admission_id"],
+            "bundle_id": manifest["bundle_id"],
+            "manifest_digest": manifest["manifest_digest"],
+            "issued_at": timestamp(now),
+            "expires_at": manifest["expires_at"],
+        }
+        self.schemas.require("chat-first-u1-save-receipt", receipt)
+        display = {
+            "schema_version": "1.0",
+            "authority_id": AUTHORITY_ID_V2,
+            "authority_bundle_id": authority["bundle_id"],
+            "purpose": "chat_first_u1_save",
+            "manifest": manifest,
+            "manifest_digest": manifest["manifest_digest"],
+            "receipt": receipt,
+        }
+        self.schemas.require("chat-first-u1-save-display", display)
+        display_bytes = canonical_bytes(display)
+        display_path = self.paths.ensure_runtime_write_target(
+            self.chat_first_u1_save_display_root / f"{receipt['receipt_id']}.json"
+        )
+        _write_immutable(display_path, display_bytes)
+        response = self.chat_first_u1_save_confirmation_ui.confirm(
+            display_path,
+            expected_manifest_digest=manifest["manifest_digest"],
+        )
+        if not hmac.compare_digest(response, manifest["manifest_digest"]):
+            raise LocalConfirmationV2Declined(
+                "local confirmation did not match the exact Chat-first U1 manifest digest"
+            )
+        if _read_bytes(display_path) != display_bytes:
+            raise LocalConfirmationV2Error("Chat-first U1 display changed before receipt issuance")
+        confirmed_at = self.clock()
+        if confirmed_at.tzinfo is None or confirmed_at.utcoffset() is None:
+            raise ValueError("clock must return a timezone-aware instant")
+        if expires_at <= confirmed_at.astimezone(UTC):
+            raise LocalConfirmationV2Error("Chat-first U1 confirmation expired before receipt issuance")
+        record = {
+            "schema_version": "1.0",
+            "receipt_type": "chat_first_u1_save",
+            "authority_id": AUTHORITY_ID_V2,
+            "authority_bundle_id": authority["bundle_id"],
+            "algorithm": ALGORITHM,
+            "key_id": identity.key_id,
+            "receipt": receipt,
+            "manifest": manifest,
+            "manifest_digest": manifest["manifest_digest"],
+            "confirmation_display_sha256": sha256_hex(display_bytes),
+            "confirmed_at": timestamp(confirmed_at),
+            "signature_base64": "pending",
+        }
+        record["signature_base64"] = base64.b64encode(
+            identity.private_key.sign(canonical_bytes(_signature_material(record)))
+        ).decode("ascii")
+        self.schemas.require("chat-first-u1-save-signed-receipt", record)
+        _write_immutable(
+            self.paths.ensure_runtime_write_target(
+                self.chat_first_u1_save_receipt_root / f"{receipt['receipt_id']}.json"
+            ),
+            canonical_bytes(record),
+        )
+        return receipt
+
+    def verify_chat_first_u1_save(
+        self, receipt_id: str, manifest: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Replay-verify exactly one existing Chat-first U1 receipt without Keychain access."""
+
+        return ChatFirstU1SaveV2ReceiptVerifier(
+            self.paths, self.authority_root, self.schemas, clock=self.clock
+        ).verify(receipt_id, manifest)
+
+    def read_chat_first_u1_save_evidence(
+        self, receipt_id: str, manifest: dict[str, Any]
+    ) -> tuple[bytes, bytes]:
+        """Return the already-verified, purpose-limited display and signed receipt bytes.
+
+        This is deliberately a read-only evidence handoff: it neither exposes signing nor reads
+        Keychain material.  A private publisher may archive these exact bytes under its separate
+        bundle so a later restart can verify the same confirmation without a transient runtime.
+        """
+
+        self.verify_chat_first_u1_save(receipt_id, manifest)
+        return (
+            _read_bytes(self.chat_first_u1_save_display_root / f"{receipt_id}.json"),
+            _read_bytes(self.chat_first_u1_save_receipt_root / f"{receipt_id}.json"),
+        )
+
+    def verify_archived_chat_first_u1_save(
+        self,
+        receipt_id: str,
+        manifest: dict[str, Any],
+        *,
+        display_root: Path,
+        receipt_root: Path,
+    ) -> dict[str, Any]:
+        """Replay-verify exact archived evidence using only the v2 public authority record."""
+
+        return ChatFirstU1SaveV2ReceiptVerifier(
+            self.paths,
+            self.authority_root,
+            self.schemas,
+            clock=self.clock,
+            display_root=display_root,
+            receipt_root=receipt_root,
+        ).verify_archived(receipt_id, manifest)
+
+    def authorize_chat_first_u1_multi_source_save(self, manifest: dict[str, Any]) -> dict[str, Any]:
+        """Confirm one ordered M1/W1/W2/W3 U1 proposal with the existing v2 identity only."""
+
+        _require_chat_first_u1_multi_source_save_manifest(manifest, self.schemas)
+        now = self.clock()
+        if now.tzinfo is None or now.utcoffset() is None:
+            raise ValueError("clock must return a timezone-aware instant")
+        expires_at = _parse_timestamp(manifest["expires_at"])
+        if expires_at <= now.astimezone(UTC):
+            raise LocalConfirmationV2Error("cannot confirm an expired multi-source U1 manifest")
+        if self.chat_first_u1_save_confirmation_ui is None:
+            raise LocalConfirmationV2Error("multi-source U1 native confirmation UI is not configured")
+        identity, authority = self._signing_identity(allow_create=False)
+        receipt = {
+            "schema_version": "1.0", "receipt_id": self.id_factory.new("receipt"),
+            "authority_id": AUTHORITY_ID_V2, "purpose": "chat_first_u1_multi_source_save",
+            "admission_id": manifest["admission_id"], "bundle_id": manifest["bundle_id"],
+            "manifest_digest": manifest["manifest_digest"], "issued_at": timestamp(now),
+            "expires_at": manifest["expires_at"],
+        }
+        self.schemas.require("chat-first-u1-multi-source-save-receipt", receipt)
+        display = {
+            "schema_version": "1.0", "authority_id": AUTHORITY_ID_V2,
+            "authority_bundle_id": authority["bundle_id"], "purpose": receipt["purpose"],
+            "manifest": manifest, "manifest_digest": manifest["manifest_digest"], "receipt": receipt,
+        }
+        self.schemas.require("chat-first-u1-multi-source-save-display", display)
+        display_bytes = canonical_bytes(display)
+        display_path = self.paths.ensure_runtime_write_target(
+            self.chat_first_u1_multi_source_save_display_root / f"{receipt['receipt_id']}.json"
+        )
+        _write_immutable(display_path, display_bytes)
+        response = self.chat_first_u1_save_confirmation_ui.confirm(
+            display_path, expected_manifest_digest=manifest["manifest_digest"]
+        )
+        if not hmac.compare_digest(response, manifest["manifest_digest"]):
+            raise LocalConfirmationV2Declined("local confirmation did not match the exact multi-source U1 digest")
+        if _read_bytes(display_path) != display_bytes:
+            raise LocalConfirmationV2Error("multi-source U1 display changed before receipt issuance")
+        confirmed_at = self.clock()
+        if confirmed_at.tzinfo is None or confirmed_at.utcoffset() is None:
+            raise ValueError("clock must return a timezone-aware instant")
+        if expires_at <= confirmed_at.astimezone(UTC):
+            raise LocalConfirmationV2Error("multi-source U1 confirmation expired before receipt issuance")
+        record = {
+            "schema_version": "1.0", "receipt_type": receipt["purpose"], "authority_id": AUTHORITY_ID_V2,
+            "authority_bundle_id": authority["bundle_id"], "algorithm": ALGORITHM, "key_id": identity.key_id,
+            "receipt": receipt, "manifest": manifest, "manifest_digest": manifest["manifest_digest"],
+            "confirmation_display_sha256": sha256_hex(display_bytes), "confirmed_at": timestamp(confirmed_at),
+            "signature_base64": "pending",
+        }
+        record["signature_base64"] = base64.b64encode(
+            identity.private_key.sign(canonical_bytes(_signature_material(record)))
+        ).decode("ascii")
+        self.schemas.require("chat-first-u1-multi-source-save-signed-receipt", record)
+        _write_immutable(
+            self.paths.ensure_runtime_write_target(
+                self.chat_first_u1_multi_source_save_receipt_root / f"{receipt['receipt_id']}.json"
+            ),
+            canonical_bytes(record),
+        )
+        return receipt
+
+    def verify_chat_first_u1_multi_source_save(
+        self, receipt_id: str, manifest: dict[str, Any]
+    ) -> dict[str, Any]:
+        return ChatFirstU1MultiSourceSaveV2ReceiptVerifier(
+            self.paths, self.authority_root, self.schemas, clock=self.clock
+        ).verify(receipt_id, manifest)
+
+    def read_chat_first_u1_multi_source_save_evidence(
+        self, receipt_id: str, manifest: dict[str, Any]
+    ) -> tuple[bytes, bytes]:
+        self.verify_chat_first_u1_multi_source_save(receipt_id, manifest)
+        return (
+            _read_bytes(self.chat_first_u1_multi_source_save_display_root / f"{receipt_id}.json"),
+            _read_bytes(self.chat_first_u1_multi_source_save_receipt_root / f"{receipt_id}.json"),
+        )
+
+    def verify_archived_chat_first_u1_multi_source_save(
+        self,
+        receipt_id: str,
+        manifest: dict[str, Any],
+        *,
+        display_root: Path,
+        receipt_root: Path,
+    ) -> dict[str, Any]:
+        return ChatFirstU1MultiSourceSaveV2ReceiptVerifier(
+            self.paths,
+            self.authority_root,
+            self.schemas,
+            clock=self.clock,
+            display_root=display_root,
+            receipt_root=receipt_root,
+        ).verify_archived(receipt_id, manifest)
+
+    def authorize_chat_first_u1_multi_source_knowledge_save(self, manifest: dict[str, Any]) -> dict[str, Any]:
+        """Confirm one ordered K1/K2/K3/K4 knowledge U1 proposal with the existing v2 identity."""
+
+        _require_chat_first_u1_multi_source_knowledge_save_manifest(manifest, self.schemas)
+        return self._authorize_multi_source_knowledge_save(manifest)
+
+    def _authorize_multi_source_knowledge_save(self, manifest: dict[str, Any]) -> dict[str, Any]:
+        now = self.clock()
+        if now.tzinfo is None or now.utcoffset() is None:
+            raise ValueError("clock must return a timezone-aware instant")
+        expires_at = _parse_timestamp(manifest["expires_at"])
+        if expires_at <= now.astimezone(UTC):
+            raise LocalConfirmationV2Error("cannot confirm an expired knowledge U1 manifest")
+        if self.chat_first_u1_save_confirmation_ui is None:
+            raise LocalConfirmationV2Error("knowledge U1 native confirmation UI is not configured")
+        identity, authority = self._signing_identity(allow_create=False)
+        purpose = "chat_first_u1_multi_source_knowledge_save"
+        receipt = {
+            "schema_version": "1.0", "receipt_id": self.id_factory.new("receipt"),
+            "authority_id": AUTHORITY_ID_V2, "purpose": purpose,
+            "admission_id": manifest["admission_id"], "bundle_id": manifest["bundle_id"],
+            "manifest_digest": manifest["manifest_digest"], "issued_at": timestamp(now),
+            "expires_at": manifest["expires_at"],
+        }
+        self.schemas.require("chat-first-u1-multi-source-knowledge-save-receipt", receipt)
+        display = {
+            "schema_version": "1.0", "authority_id": AUTHORITY_ID_V2,
+            "authority_bundle_id": authority["bundle_id"], "purpose": purpose,
+            "manifest": manifest, "manifest_digest": manifest["manifest_digest"], "receipt": receipt,
+        }
+        self.schemas.require("chat-first-u1-multi-source-knowledge-save-display", display)
+        display_bytes = canonical_bytes(display)
+        display_path = self.paths.ensure_runtime_write_target(
+            self.chat_first_u1_multi_source_knowledge_save_display_root / f"{receipt['receipt_id']}.json"
+        )
+        _write_immutable(display_path, display_bytes)
+        response = self.chat_first_u1_save_confirmation_ui.confirm(
+            display_path, expected_manifest_digest=manifest["manifest_digest"]
+        )
+        if not hmac.compare_digest(response, manifest["manifest_digest"]):
+            raise LocalConfirmationV2Declined("local confirmation did not match the exact knowledge U1 digest")
+        if _read_bytes(display_path) != display_bytes:
+            raise LocalConfirmationV2Error("knowledge U1 display changed before receipt issuance")
+        confirmed_at = self.clock()
+        if confirmed_at.tzinfo is None or confirmed_at.utcoffset() is None:
+            raise ValueError("clock must return a timezone-aware instant")
+        if expires_at <= confirmed_at.astimezone(UTC):
+            raise LocalConfirmationV2Error("knowledge U1 confirmation expired before receipt issuance")
+        record = {
+            "schema_version": "1.0", "receipt_type": purpose, "authority_id": AUTHORITY_ID_V2,
+            "authority_bundle_id": authority["bundle_id"], "algorithm": ALGORITHM, "key_id": identity.key_id,
+            "receipt": receipt, "manifest": manifest, "manifest_digest": manifest["manifest_digest"],
+            "confirmation_display_sha256": sha256_hex(display_bytes), "confirmed_at": timestamp(confirmed_at),
+            "signature_base64": "pending",
+        }
+        record["signature_base64"] = base64.b64encode(
+            identity.private_key.sign(canonical_bytes(_signature_material(record)))
+        ).decode("ascii")
+        self.schemas.require("chat-first-u1-multi-source-knowledge-save-signed-receipt", record)
+        _write_immutable(
+            self.paths.ensure_runtime_write_target(
+                self.chat_first_u1_multi_source_knowledge_save_receipt_root / f"{receipt['receipt_id']}.json"
+            ),
+            canonical_bytes(record),
+        )
+        return receipt
+
+    def verify_chat_first_u1_multi_source_knowledge_save(
+        self, receipt_id: str, manifest: dict[str, Any]
+    ) -> dict[str, Any]:
+        return ChatFirstU1MultiSourceKnowledgeSaveV2ReceiptVerifier(
+            self.paths, self.authority_root, self.schemas, clock=self.clock
+        ).verify(receipt_id, manifest)
+
+    def read_chat_first_u1_multi_source_knowledge_save_evidence(
+        self, receipt_id: str, manifest: dict[str, Any]
+    ) -> tuple[bytes, bytes]:
+        self.verify_chat_first_u1_multi_source_knowledge_save(receipt_id, manifest)
+        return (
+            _read_bytes(self.chat_first_u1_multi_source_knowledge_save_display_root / f"{receipt_id}.json"),
+            _read_bytes(self.chat_first_u1_multi_source_knowledge_save_receipt_root / f"{receipt_id}.json"),
+        )
+
+    def verify_archived_chat_first_u1_multi_source_knowledge_save(
+        self, receipt_id: str, manifest: dict[str, Any], *, display_root: Path, receipt_root: Path,
+    ) -> dict[str, Any]:
+        return ChatFirstU1MultiSourceKnowledgeSaveV2ReceiptVerifier(
+            self.paths, self.authority_root, self.schemas, clock=self.clock,
+            display_root=display_root, receipt_root=receipt_root,
+        ).verify_archived(receipt_id, manifest)
+
+    def authorize_chat_first_u1_citation_recovery(self, manifest: dict[str, Any]) -> dict[str, Any]:
+        """Confirm one append-only recovery proposal with the existing v2 identity only."""
+
+        _require_chat_first_u1_citation_recovery_manifest(manifest, self.schemas)
+        now = self.clock()
+        if now.tzinfo is None or now.utcoffset() is None:
+            raise ValueError("clock must return a timezone-aware instant")
+        expires_at = _parse_timestamp(manifest["expires_at"])
+        if expires_at <= now.astimezone(UTC):
+            raise LocalConfirmationV2Error("cannot confirm an expired citation-recovery U1 manifest")
+        if self.chat_first_u1_save_confirmation_ui is None:
+            raise LocalConfirmationV2Error("citation-recovery U1 native confirmation UI is not configured")
+        identity, authority = self._signing_identity(allow_create=False)
+        receipt = {
+            "schema_version": "1.0", "receipt_id": self.id_factory.new("receipt"),
+            "authority_id": AUTHORITY_ID_V2, "purpose": "chat_first_u1_citation_recovery",
+            "admission_id": manifest["admission_id"], "bundle_id": manifest["bundle_id"],
+            "manifest_digest": manifest["manifest_digest"], "issued_at": timestamp(now),
+            "expires_at": manifest["expires_at"],
+        }
+        self.schemas.require("chat-first-u1-citation-recovery-receipt", receipt)
+        display = {
+            "schema_version": "1.0", "authority_id": AUTHORITY_ID_V2,
+            "authority_bundle_id": authority["bundle_id"], "purpose": receipt["purpose"],
+            "manifest": manifest, "manifest_digest": manifest["manifest_digest"], "receipt": receipt,
+        }
+        self.schemas.require("chat-first-u1-citation-recovery-display", display)
+        display_bytes = canonical_bytes(display)
+        display_path = self.paths.ensure_runtime_write_target(
+            self.chat_first_u1_citation_recovery_display_root / f"{receipt['receipt_id']}.json"
+        )
+        _write_immutable(display_path, display_bytes)
+        response = self.chat_first_u1_save_confirmation_ui.confirm(
+            display_path, expected_manifest_digest=manifest["manifest_digest"]
+        )
+        if not hmac.compare_digest(response, manifest["manifest_digest"]):
+            raise LocalConfirmationV2Declined("local confirmation did not match the exact citation-recovery digest")
+        if _read_bytes(display_path) != display_bytes:
+            raise LocalConfirmationV2Error("citation-recovery U1 display changed before receipt issuance")
+        confirmed_at = self.clock()
+        if confirmed_at.tzinfo is None or confirmed_at.utcoffset() is None:
+            raise ValueError("clock must return a timezone-aware instant")
+        if expires_at <= confirmed_at.astimezone(UTC):
+            raise LocalConfirmationV2Error("citation-recovery U1 confirmation expired before receipt issuance")
+        record = {
+            "schema_version": "1.0", "receipt_type": receipt["purpose"], "authority_id": AUTHORITY_ID_V2,
+            "authority_bundle_id": authority["bundle_id"], "algorithm": ALGORITHM, "key_id": identity.key_id,
+            "receipt": receipt, "manifest": manifest, "manifest_digest": manifest["manifest_digest"],
+            "confirmation_display_sha256": sha256_hex(display_bytes), "confirmed_at": timestamp(confirmed_at),
+            "signature_base64": "pending",
+        }
+        record["signature_base64"] = base64.b64encode(
+            identity.private_key.sign(canonical_bytes(_signature_material(record)))
+        ).decode("ascii")
+        self.schemas.require("chat-first-u1-citation-recovery-signed-receipt", record)
+        _write_immutable(
+            self.paths.ensure_runtime_write_target(
+                self.chat_first_u1_citation_recovery_receipt_root / f"{receipt['receipt_id']}.json"
+            ),
+            canonical_bytes(record),
+        )
+        return receipt
+
+    def verify_chat_first_u1_citation_recovery(
+        self, receipt_id: str, manifest: dict[str, Any]
+    ) -> dict[str, Any]:
+        return ChatFirstU1CitationRecoveryV2ReceiptVerifier(
+            self.paths, self.authority_root, self.schemas, clock=self.clock
+        ).verify(receipt_id, manifest)
+
+    def read_chat_first_u1_citation_recovery_evidence(
+        self, receipt_id: str, manifest: dict[str, Any]
+    ) -> tuple[bytes, bytes]:
+        self.verify_chat_first_u1_citation_recovery(receipt_id, manifest)
+        return (
+            _read_bytes(self.chat_first_u1_citation_recovery_display_root / f"{receipt_id}.json"),
+            _read_bytes(self.chat_first_u1_citation_recovery_receipt_root / f"{receipt_id}.json"),
+        )
+
+    def verify_archived_chat_first_u1_citation_recovery(
+        self,
+        receipt_id: str,
+        manifest: dict[str, Any],
+        *,
+        display_root: Path,
+        receipt_root: Path,
+    ) -> dict[str, Any]:
+        return ChatFirstU1CitationRecoveryV2ReceiptVerifier(
+            self.paths,
+            self.authority_root,
+            self.schemas,
+            clock=self.clock,
+            display_root=display_root,
+            receipt_root=receipt_root,
+        ).verify_archived(receipt_id, manifest)
+
+    def authorize_chat_first_u1_primary_artifact_retrofit(
+        self, manifest: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Confirm one exact W1/W2/W3 append-only presentation retrofit."""
+
+        _require_chat_first_u1_primary_artifact_retrofit_manifest(manifest, self.schemas)
+        now = self.clock()
+        if now.tzinfo is None or now.utcoffset() is None:
+            raise ValueError("clock must return a timezone-aware instant")
+        expires_at = _parse_timestamp(manifest["expires_at"])
+        if expires_at <= now.astimezone(UTC):
+            raise LocalConfirmationV2Error("cannot confirm an expired primary-artifact retrofit")
+        if self.chat_first_u1_save_confirmation_ui is None:
+            raise LocalConfirmationV2Error("primary-artifact retrofit native confirmation UI is not configured")
+        identity, authority = self._signing_identity(allow_create=False)
+        purpose = "chat_first_u1_primary_artifact_retrofit"
+        receipt = {
+            "schema_version": "1.0", "receipt_id": self.id_factory.new("receipt"),
+            "authority_id": AUTHORITY_ID_V2, "purpose": purpose,
+            "admission_id": manifest["admission_id"], "bundle_id": manifest["bundle_id"],
+            "manifest_digest": manifest["manifest_digest"], "issued_at": timestamp(now),
+            "expires_at": manifest["expires_at"],
+        }
+        self.schemas.require("chat-first-u1-primary-artifact-retrofit-receipt", receipt)
+        display = {
+            "schema_version": "1.0", "authority_id": AUTHORITY_ID_V2,
+            "authority_bundle_id": authority["bundle_id"], "purpose": purpose,
+            "manifest": manifest, "manifest_digest": manifest["manifest_digest"], "receipt": receipt,
+        }
+        self.schemas.require("chat-first-u1-primary-artifact-retrofit-display", display)
+        display_bytes = canonical_bytes(display)
+        display_path = self.paths.ensure_runtime_write_target(
+            self.chat_first_u1_primary_artifact_retrofit_display_root / f"{receipt['receipt_id']}.json"
+        )
+        _write_immutable(display_path, display_bytes)
+        response = self.chat_first_u1_save_confirmation_ui.confirm(
+            display_path, expected_manifest_digest=manifest["manifest_digest"]
+        )
+        if not hmac.compare_digest(response, manifest["manifest_digest"]):
+            raise LocalConfirmationV2Declined(
+                "local confirmation did not match the exact primary-artifact retrofit digest"
+            )
+        if _read_bytes(display_path) != display_bytes:
+            raise LocalConfirmationV2Error("primary-artifact retrofit display changed before receipt issuance")
+        confirmed_at = self.clock()
+        if confirmed_at.tzinfo is None or confirmed_at.utcoffset() is None:
+            raise ValueError("clock must return a timezone-aware instant")
+        if expires_at <= confirmed_at.astimezone(UTC):
+            raise LocalConfirmationV2Error("primary-artifact retrofit expired before receipt issuance")
+        record = {
+            "schema_version": "1.0", "receipt_type": purpose, "authority_id": AUTHORITY_ID_V2,
+            "authority_bundle_id": authority["bundle_id"], "algorithm": ALGORITHM,
+            "key_id": identity.key_id, "receipt": receipt, "manifest": manifest,
+            "manifest_digest": manifest["manifest_digest"],
+            "confirmation_display_sha256": sha256_hex(display_bytes),
+            "confirmed_at": timestamp(confirmed_at), "signature_base64": "pending",
+        }
+        record["signature_base64"] = base64.b64encode(
+            identity.private_key.sign(canonical_bytes(_signature_material(record)))
+        ).decode("ascii")
+        self.schemas.require("chat-first-u1-primary-artifact-retrofit-signed-receipt", record)
+        _write_immutable(
+            self.paths.ensure_runtime_write_target(
+                self.chat_first_u1_primary_artifact_retrofit_receipt_root / f"{receipt['receipt_id']}.json"
+            ),
+            canonical_bytes(record),
+        )
+        return receipt
+
+    def verify_chat_first_u1_primary_artifact_retrofit(
+        self, receipt_id: str, manifest: dict[str, Any]
+    ) -> dict[str, Any]:
+        return ChatFirstU1PrimaryArtifactRetrofitV2ReceiptVerifier(
+            self.paths, self.authority_root, self.schemas, clock=self.clock
+        ).verify(receipt_id, manifest)
+
+    def read_chat_first_u1_primary_artifact_retrofit_evidence(
+        self, receipt_id: str, manifest: dict[str, Any]
+    ) -> tuple[bytes, bytes]:
+        self.verify_chat_first_u1_primary_artifact_retrofit(receipt_id, manifest)
+        return (
+            _read_bytes(self.chat_first_u1_primary_artifact_retrofit_display_root / f"{receipt_id}.json"),
+            _read_bytes(self.chat_first_u1_primary_artifact_retrofit_receipt_root / f"{receipt_id}.json"),
+        )
+
+    def verify_archived_chat_first_u1_primary_artifact_retrofit(
+        self,
+        receipt_id: str,
+        manifest: dict[str, Any],
+        *,
+        display_root: Path,
+        receipt_root: Path,
+    ) -> dict[str, Any]:
+        return ChatFirstU1PrimaryArtifactRetrofitV2ReceiptVerifier(
+            self.paths, self.authority_root, self.schemas, clock=self.clock,
+            display_root=display_root, receipt_root=receipt_root,
+        ).verify_archived(receipt_id, manifest)
+
+    def authorize_archive_preservation(self, manifest: dict[str, Any]) -> dict[str, Any]:
+        """Confirm one opaque local-only archive preservation proposal with existing v2 identity."""
+
+        _require_archive_preservation_manifest(manifest, self.schemas)
+        now = self.clock()
+        if now.tzinfo is None or now.utcoffset() is None:
+            raise ValueError("clock must return a timezone-aware instant")
+        expires_at = _parse_timestamp(manifest["expires_at"])
+        if expires_at <= now.astimezone(UTC):
+            raise LocalConfirmationV2Error("cannot confirm an expired archive preservation manifest")
+        if self.chat_first_u1_save_confirmation_ui is None:
+            raise LocalConfirmationV2Error("archive preservation native confirmation UI is not configured")
+        identity, authority = self._signing_identity(allow_create=False)
+        receipt = {
+            "schema_version": "1.0", "receipt_id": self.id_factory.new("receipt"),
+            "authority_id": AUTHORITY_ID_V2, "purpose": "archive_preservation",
+            "admission_id": manifest["admission_id"], "bundle_id": manifest["bundle_id"],
+            "manifest_digest": manifest["manifest_digest"], "issued_at": timestamp(now),
+            "expires_at": manifest["expires_at"],
+        }
+        self.schemas.require("archive-preservation-receipt", receipt)
+        display = {
+            "schema_version": "1.0", "authority_id": AUTHORITY_ID_V2,
+            "authority_bundle_id": authority["bundle_id"], "purpose": "archive_preservation",
+            "manifest": manifest, "manifest_digest": manifest["manifest_digest"], "receipt": receipt,
+        }
+        self.schemas.require("archive-preservation-display", display)
+        display_bytes = canonical_bytes(display)
+        display_path = self.paths.ensure_runtime_write_target(
+            self.archive_preservation_display_root / f"{receipt['receipt_id']}.json"
+        )
+        _write_immutable(display_path, display_bytes)
+        response = self.chat_first_u1_save_confirmation_ui.confirm(
+            display_path, expected_manifest_digest=manifest["manifest_digest"]
+        )
+        if not hmac.compare_digest(response, manifest["manifest_digest"]):
+            raise LocalConfirmationV2Declined("local confirmation did not match archive preservation digest")
+        if _read_bytes(display_path) != display_bytes:
+            raise LocalConfirmationV2Error("archive preservation display changed before receipt issuance")
+        confirmed_at = self.clock()
+        if confirmed_at.tzinfo is None or confirmed_at.utcoffset() is None:
+            raise ValueError("clock must return a timezone-aware instant")
+        if expires_at <= confirmed_at.astimezone(UTC):
+            raise LocalConfirmationV2Error("archive preservation expired before receipt issuance")
+        record = {
+            "schema_version": "1.0", "receipt_type": "archive_preservation",
+            "authority_id": AUTHORITY_ID_V2, "authority_bundle_id": authority["bundle_id"],
+            "algorithm": ALGORITHM, "key_id": identity.key_id, "receipt": receipt, "manifest": manifest,
+            "manifest_digest": manifest["manifest_digest"],
+            "confirmation_display_sha256": sha256_hex(display_bytes),
+            "confirmed_at": timestamp(confirmed_at), "signature_base64": "pending",
+        }
+        record["signature_base64"] = base64.b64encode(
+            identity.private_key.sign(canonical_bytes(_signature_material(record)))
+        ).decode("ascii")
+        self.schemas.require("archive-preservation-signed-receipt", record)
+        _write_immutable(
+            self.paths.ensure_runtime_write_target(
+                self.archive_preservation_receipt_root / f"{receipt['receipt_id']}.json"
+            ), canonical_bytes(record)
+        )
+        return receipt
+
+    def verify_archive_preservation(self, receipt_id: str, manifest: dict[str, Any]) -> dict[str, Any]:
+        return ArchivePreservationV2ReceiptVerifier(
+            self.paths, self.authority_root, self.schemas, clock=self.clock
+        ).verify(receipt_id, manifest)
+
+    def read_archive_preservation_evidence(
+        self, receipt_id: str, manifest: dict[str, Any]
+    ) -> tuple[bytes, bytes]:
+        self.verify_archive_preservation(receipt_id, manifest)
+        return (
+            _read_bytes(self.archive_preservation_display_root / f"{receipt_id}.json"),
+            _read_bytes(self.archive_preservation_receipt_root / f"{receipt_id}.json"),
+        )
+
+    def verify_archived_archive_preservation(
+        self, receipt_id: str, manifest: dict[str, Any], *, display_root: Path, receipt_root: Path
+    ) -> dict[str, Any]:
+        return ArchivePreservationV2ReceiptVerifier(
+            self.paths, self.authority_root, self.schemas, clock=self.clock,
+            display_root=display_root, receipt_root=receipt_root,
+        ).verify_archived(receipt_id, manifest)
+
+    def authorize_historical_activity_reconstruction(
+        self, manifest: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Confirm one candidate-only historical cohort using the existing v2 identity."""
+
+        _require_historical_activity_reconstruction_manifest(manifest, self.schemas)
+        now = self.clock()
+        if now.tzinfo is None or now.utcoffset() is None:
+            raise ValueError("clock must return a timezone-aware instant")
+        expires_at = _parse_timestamp(manifest["expires_at"])
+        if expires_at <= now.astimezone(UTC):
+            raise LocalConfirmationV2Error("cannot confirm an expired historical activity manifest")
+        if self.chat_first_u1_save_confirmation_ui is None:
+            raise LocalConfirmationV2Error(
+                "historical activity native confirmation UI is not configured"
+            )
+        identity, authority = self._signing_identity(allow_create=False)
+        purpose = "historical_activity_reconstruction"
+        receipt = {
+            "schema_version": "1.0", "receipt_id": self.id_factory.new("receipt"),
+            "authority_id": AUTHORITY_ID_V2, "purpose": purpose,
+            "admission_id": manifest["admission_id"], "bundle_id": manifest["bundle_id"],
+            "manifest_digest": manifest["manifest_digest"], "issued_at": timestamp(now),
+            "expires_at": manifest["expires_at"],
+        }
+        self.schemas.require("historical-activity-reconstruction-receipt", receipt)
+        display = {
+            "schema_version": "1.0", "authority_id": AUTHORITY_ID_V2,
+            "authority_bundle_id": authority["bundle_id"], "purpose": purpose,
+            "manifest": manifest, "manifest_digest": manifest["manifest_digest"],
+            "receipt": receipt,
+        }
+        self.schemas.require("historical-activity-reconstruction-display", display)
+        display_bytes = canonical_bytes(display)
+        display_path = self.paths.ensure_runtime_write_target(
+            self.historical_activity_reconstruction_display_root / f"{receipt['receipt_id']}.json"
+        )
+        _write_immutable(display_path, display_bytes)
+        response = self.chat_first_u1_save_confirmation_ui.confirm(
+            display_path, expected_manifest_digest=manifest["manifest_digest"]
+        )
+        if not hmac.compare_digest(response, manifest["manifest_digest"]):
+            raise LocalConfirmationV2Declined(
+                "local confirmation did not match historical activity digest"
+            )
+        if _read_bytes(display_path) != display_bytes:
+            raise LocalConfirmationV2Error(
+                "historical activity display changed before receipt issuance"
+            )
+        confirmed_at = self.clock()
+        if confirmed_at.tzinfo is None or confirmed_at.utcoffset() is None:
+            raise ValueError("clock must return a timezone-aware instant")
+        if expires_at <= confirmed_at.astimezone(UTC):
+            raise LocalConfirmationV2Error(
+                "historical activity confirmation expired before receipt issuance"
+            )
+        record = {
+            "schema_version": "1.0", "receipt_type": purpose,
+            "authority_id": AUTHORITY_ID_V2, "authority_bundle_id": authority["bundle_id"],
+            "algorithm": ALGORITHM, "key_id": identity.key_id, "receipt": receipt,
+            "manifest": manifest, "manifest_digest": manifest["manifest_digest"],
+            "confirmation_display_sha256": sha256_hex(display_bytes),
+            "confirmed_at": timestamp(confirmed_at), "signature_base64": "pending",
+        }
+        record["signature_base64"] = base64.b64encode(
+            identity.private_key.sign(canonical_bytes(_signature_material(record)))
+        ).decode("ascii")
+        self.schemas.require("historical-activity-reconstruction-signed-receipt", record)
+        _write_immutable(
+            self.paths.ensure_runtime_write_target(
+                self.historical_activity_reconstruction_receipt_root
+                / f"{receipt['receipt_id']}.json"
+            ),
+            canonical_bytes(record),
+        )
+        return receipt
+
+    def verify_historical_activity_reconstruction(
+        self, receipt_id: str, manifest: dict[str, Any]
+    ) -> dict[str, Any]:
+        return HistoricalActivityReconstructionV2ReceiptVerifier(
+            self.paths, self.authority_root, self.schemas, clock=self.clock
+        ).verify(receipt_id, manifest)
+
+    def read_historical_activity_reconstruction_evidence(
+        self, receipt_id: str, manifest: dict[str, Any]
+    ) -> tuple[bytes, bytes]:
+        self.verify_historical_activity_reconstruction(receipt_id, manifest)
+        return (
+            _read_bytes(
+                self.historical_activity_reconstruction_display_root / f"{receipt_id}.json"
+            ),
+            _read_bytes(
+                self.historical_activity_reconstruction_receipt_root / f"{receipt_id}.json"
+            ),
+        )
+
+    def verify_archived_historical_activity_reconstruction(
+        self,
+        receipt_id: str,
+        manifest: dict[str, Any],
+        *,
+        display_root: Path,
+        receipt_root: Path,
+    ) -> dict[str, Any]:
+        return HistoricalActivityReconstructionV2ReceiptVerifier(
+            self.paths,
+            self.authority_root,
+            self.schemas,
+            clock=self.clock,
+            display_root=display_root,
+            receipt_root=receipt_root,
+        ).verify_archived(receipt_id, manifest)
+
+    def authorize_historical_weekly_activity_reconstruction(
+        self, manifest: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Confirm one additive multi-parent weekly cohort with the existing v2 identity."""
+
+        _require_historical_weekly_activity_reconstruction_manifest(manifest, self.schemas)
+        now = self.clock()
+        if now.tzinfo is None or now.utcoffset() is None:
+            raise ValueError("clock must return a timezone-aware instant")
+        expires_at = _parse_timestamp(manifest["expires_at"])
+        if expires_at <= now.astimezone(UTC):
+            raise LocalConfirmationV2Error("cannot confirm an expired historical weekly manifest")
+        if self.chat_first_u1_save_confirmation_ui is None:
+            raise LocalConfirmationV2Error(
+                "historical weekly native confirmation UI is not configured"
+            )
+        identity, authority = self._signing_identity(allow_create=False)
+        purpose = "historical_weekly_activity_reconstruction"
+        receipt = {
+            "schema_version": "1.0",
+            "receipt_id": self.id_factory.new("receipt"),
+            "authority_id": AUTHORITY_ID_V2,
+            "purpose": purpose,
+            "admission_id": manifest["admission_id"],
+            "bundle_id": manifest["bundle_id"],
+            "manifest_digest": manifest["manifest_digest"],
+            "issued_at": timestamp(now),
+            "expires_at": manifest["expires_at"],
+        }
+        self.schemas.require("historical-weekly-activity-reconstruction-receipt", receipt)
+        display = {
+            "schema_version": "1.0",
+            "authority_id": AUTHORITY_ID_V2,
+            "authority_bundle_id": authority["bundle_id"],
+            "purpose": purpose,
+            "manifest": manifest,
+            "manifest_digest": manifest["manifest_digest"],
+            "receipt": receipt,
+        }
+        self.schemas.require("historical-weekly-activity-reconstruction-display", display)
+        display_bytes = canonical_bytes(display)
+        display_path = self.paths.ensure_runtime_write_target(
+            self.historical_weekly_activity_reconstruction_display_root
+            / f"{receipt['receipt_id']}.json"
+        )
+        _write_immutable(display_path, display_bytes)
+        response = self.chat_first_u1_save_confirmation_ui.confirm(
+            display_path, expected_manifest_digest=manifest["manifest_digest"]
+        )
+        if not hmac.compare_digest(response, manifest["manifest_digest"]):
+            raise LocalConfirmationV2Declined(
+                "local confirmation did not match historical weekly digest"
+            )
+        if _read_bytes(display_path) != display_bytes:
+            raise LocalConfirmationV2Error(
+                "historical weekly display changed before receipt issuance"
+            )
+        confirmed_at = self.clock()
+        if confirmed_at.tzinfo is None or confirmed_at.utcoffset() is None:
+            raise ValueError("clock must return a timezone-aware instant")
+        if expires_at <= confirmed_at.astimezone(UTC):
+            raise LocalConfirmationV2Error(
+                "historical weekly confirmation expired before receipt issuance"
+            )
+        record = {
+            "schema_version": "1.0",
+            "receipt_type": purpose,
+            "authority_id": AUTHORITY_ID_V2,
+            "authority_bundle_id": authority["bundle_id"],
+            "algorithm": ALGORITHM,
+            "key_id": identity.key_id,
+            "receipt": receipt,
+            "manifest": manifest,
+            "manifest_digest": manifest["manifest_digest"],
+            "confirmation_display_sha256": sha256_hex(display_bytes),
+            "confirmed_at": timestamp(confirmed_at),
+            "signature_base64": "pending",
+        }
+        record["signature_base64"] = base64.b64encode(
+            identity.private_key.sign(canonical_bytes(_signature_material(record)))
+        ).decode("ascii")
+        self.schemas.require("historical-weekly-activity-reconstruction-signed-receipt", record)
+        _write_immutable(
+            self.paths.ensure_runtime_write_target(
+                self.historical_weekly_activity_reconstruction_receipt_root
+                / f"{receipt['receipt_id']}.json"
+            ),
+            canonical_bytes(record),
+        )
+        return receipt
+
+    def verify_historical_weekly_activity_reconstruction(
+        self, receipt_id: str, manifest: dict[str, Any]
+    ) -> dict[str, Any]:
+        return HistoricalWeeklyActivityReconstructionV2ReceiptVerifier(
+            self.paths, self.authority_root, self.schemas, clock=self.clock
+        ).verify(receipt_id, manifest)
+
+    def read_historical_weekly_activity_reconstruction_evidence(
+        self, receipt_id: str, manifest: dict[str, Any]
+    ) -> tuple[bytes, bytes]:
+        self.verify_historical_weekly_activity_reconstruction(receipt_id, manifest)
+        return (
+            _read_bytes(
+                self.historical_weekly_activity_reconstruction_display_root
+                / f"{receipt_id}.json"
+            ),
+            _read_bytes(
+                self.historical_weekly_activity_reconstruction_receipt_root
+                / f"{receipt_id}.json"
+            ),
+        )
+
+    def verify_archived_historical_weekly_activity_reconstruction(
+        self,
+        receipt_id: str,
+        manifest: dict[str, Any],
+        *,
+        display_root: Path,
+        receipt_root: Path,
+    ) -> dict[str, Any]:
+        return HistoricalWeeklyActivityReconstructionV2ReceiptVerifier(
+            self.paths,
+            self.authority_root,
+            self.schemas,
+            clock=self.clock,
+            display_root=display_root,
+            receipt_root=receipt_root,
+        ).verify_archived(receipt_id, manifest)
+
+    def authorize_historical_owner_confirmed_continuity_supplement(
+        self, manifest: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Sign only one fixed-scope, owner-confirmed historical-context supplement."""
+
+        _require_historical_owner_confirmed_continuity_supplement_manifest(manifest, self.schemas)
+        now = self.clock()
+        expires_at = _parse_timestamp(manifest["expires_at"])
+        if now.tzinfo is None or now.utcoffset() is None or expires_at <= now.astimezone(UTC):
+            raise LocalConfirmationV2Error("owner-context confirmation window is invalid")
+        if self.chat_first_u1_save_confirmation_ui is None:
+            raise LocalConfirmationV2Error("owner-context native confirmation UI is not configured")
+        identity, authority = self._signing_identity(allow_create=False)
+        purpose = "historical_owner_confirmed_continuity_supplement"
+        receipt = {
+            "schema_version": "1.0", "receipt_id": self.id_factory.new("receipt"),
+            "authority_id": AUTHORITY_ID_V2, "purpose": purpose,
+            "admission_id": manifest["admission_id"], "bundle_id": manifest["bundle_id"],
+            "manifest_digest": manifest["manifest_digest"], "issued_at": timestamp(now),
+            "expires_at": manifest["expires_at"],
+        }
+        self.schemas.require("historical-owner-confirmed-continuity-supplement-receipt", receipt)
+        display = {
+            "schema_version": "1.0", "authority_id": AUTHORITY_ID_V2,
+            "authority_bundle_id": authority["bundle_id"], "purpose": purpose,
+            "manifest": manifest, "manifest_digest": manifest["manifest_digest"], "receipt": receipt,
+        }
+        self.schemas.require("historical-owner-confirmed-continuity-supplement-display", display)
+        display_bytes = canonical_bytes(display)
+        display_path = self.paths.ensure_runtime_write_target(
+            self.historical_owner_confirmed_continuity_supplement_display_root / f"{receipt['receipt_id']}.json"
+        )
+        _write_immutable(display_path, display_bytes)
+        response = self.chat_first_u1_save_confirmation_ui.confirm(
+            display_path, expected_manifest_digest=manifest["manifest_digest"]
+        )
+        if not hmac.compare_digest(response, manifest["manifest_digest"]):
+            raise LocalConfirmationV2Declined("local confirmation did not match owner-context digest")
+        if _read_bytes(display_path) != display_bytes:
+            raise LocalConfirmationV2Error("owner-context display changed before receipt issuance")
+        confirmed_at = self.clock()
+        if (
+            confirmed_at.tzinfo is None
+            or confirmed_at.utcoffset() is None
+            or expires_at <= confirmed_at.astimezone(UTC)
+        ):
+            raise LocalConfirmationV2Error("owner-context confirmation expired before receipt issuance")
+        record = {
+            "schema_version": "1.0", "receipt_type": purpose, "authority_id": AUTHORITY_ID_V2,
+            "authority_bundle_id": authority["bundle_id"], "algorithm": ALGORITHM, "key_id": identity.key_id,
+            "receipt": receipt, "manifest": manifest, "manifest_digest": manifest["manifest_digest"],
+            "confirmation_display_sha256": sha256_hex(display_bytes), "confirmed_at": timestamp(confirmed_at),
+            "signature_base64": "pending",
+        }
+        record["signature_base64"] = base64.b64encode(
+            identity.private_key.sign(canonical_bytes(_signature_material(record)))
+        ).decode("ascii")
+        self.schemas.require("historical-owner-confirmed-continuity-supplement-signed-receipt", record)
+        _write_immutable(
+            self.paths.ensure_runtime_write_target(
+                self.historical_owner_confirmed_continuity_supplement_receipt_root / f"{receipt['receipt_id']}.json"
+            ), canonical_bytes(record)
+        )
+        return receipt
+
+    def verify_historical_owner_confirmed_continuity_supplement(
+        self, receipt_id: str, manifest: dict[str, Any]
+    ) -> dict[str, Any]:
+        return HistoricalOwnerConfirmedContinuitySupplementV2ReceiptVerifier(
+            self.paths, self.authority_root, self.schemas, clock=self.clock
+        ).verify(receipt_id, manifest)
+
+    def read_historical_owner_confirmed_continuity_supplement_evidence(
+        self, receipt_id: str, manifest: dict[str, Any]
+    ) -> tuple[bytes, bytes]:
+        self.verify_historical_owner_confirmed_continuity_supplement(receipt_id, manifest)
+        return (
+            _read_bytes(self.historical_owner_confirmed_continuity_supplement_display_root / f"{receipt_id}.json"),
+            _read_bytes(self.historical_owner_confirmed_continuity_supplement_receipt_root / f"{receipt_id}.json"),
+        )
+
+    def verify_archived_historical_owner_confirmed_continuity_supplement(
+        self, receipt_id: str, manifest: dict[str, Any], *, display_root: Path, receipt_root: Path
+    ) -> dict[str, Any]:
+        return HistoricalOwnerConfirmedContinuitySupplementV2ReceiptVerifier(
+            self.paths, self.authority_root, self.schemas, clock=self.clock,
+            display_root=display_root, receipt_root=receipt_root,
+        ).verify_archived(receipt_id, manifest)
+
+    def authorize_historical_migration_amendment(
+        self, manifest: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Sign one exact-parent, append-only historical migration amendment."""
+
+        _require_historical_migration_amendment_manifest(manifest, self.schemas)
+        now = self.clock()
+        expires_at = _parse_timestamp(manifest["expires_at"])
+        if now.tzinfo is None or now.utcoffset() is None or expires_at <= now.astimezone(UTC):
+            raise LocalConfirmationV2Error("historical amendment confirmation window is invalid")
+        if self.chat_first_u1_save_confirmation_ui is None:
+            raise LocalConfirmationV2Error("historical amendment native confirmation UI is not configured")
+        identity, authority = self._signing_identity(allow_create=False)
+        purpose = "historical_migration_amendment"
+        receipt = {
+            "schema_version": "1.0",
+            "receipt_id": self.id_factory.new("receipt"),
+            "authority_id": AUTHORITY_ID_V2,
+            "purpose": purpose,
+            "admission_id": manifest["admission_id"],
+            "bundle_id": manifest["bundle_id"],
+            "manifest_digest": manifest["manifest_digest"],
+            "issued_at": timestamp(now),
+            "expires_at": manifest["expires_at"],
+        }
+        self.schemas.require("historical-migration-amendment-receipt", receipt)
+        display = {
+            "schema_version": "1.0",
+            "authority_id": AUTHORITY_ID_V2,
+            "authority_bundle_id": authority["bundle_id"],
+            "purpose": purpose,
+            "manifest": manifest,
+            "manifest_digest": manifest["manifest_digest"],
+            "receipt": receipt,
+        }
+        self.schemas.require("historical-migration-amendment-display", display)
+        display_bytes = canonical_bytes(display)
+        display_path = self.paths.ensure_runtime_write_target(
+            self.historical_migration_amendment_display_root / f"{receipt['receipt_id']}.json"
+        )
+        _write_immutable(display_path, display_bytes)
+        response = self.chat_first_u1_save_confirmation_ui.confirm(
+            display_path, expected_manifest_digest=manifest["manifest_digest"]
+        )
+        if not hmac.compare_digest(response, manifest["manifest_digest"]):
+            raise LocalConfirmationV2Declined(
+                "local confirmation did not match historical amendment digest"
+            )
+        if _read_bytes(display_path) != display_bytes:
+            raise LocalConfirmationV2Error(
+                "historical amendment display changed before receipt issuance"
+            )
+        confirmed_at = self.clock()
+        if (
+            confirmed_at.tzinfo is None
+            or confirmed_at.utcoffset() is None
+            or expires_at <= confirmed_at.astimezone(UTC)
+        ):
+            raise LocalConfirmationV2Error(
+                "historical amendment confirmation expired before receipt issuance"
+            )
+        record = {
+            "schema_version": "1.0",
+            "receipt_type": purpose,
+            "authority_id": AUTHORITY_ID_V2,
+            "authority_bundle_id": authority["bundle_id"],
+            "algorithm": ALGORITHM,
+            "key_id": identity.key_id,
+            "receipt": receipt,
+            "manifest": manifest,
+            "manifest_digest": manifest["manifest_digest"],
+            "confirmation_display_sha256": sha256_hex(display_bytes),
+            "confirmed_at": timestamp(confirmed_at),
+            "signature_base64": "pending",
+        }
+        record["signature_base64"] = base64.b64encode(
+            identity.private_key.sign(canonical_bytes(_signature_material(record)))
+        ).decode("ascii")
+        self.schemas.require("historical-migration-amendment-signed-receipt", record)
+        _write_immutable(
+            self.paths.ensure_runtime_write_target(
+                self.historical_migration_amendment_receipt_root
+                / f"{receipt['receipt_id']}.json"
+            ),
+            canonical_bytes(record),
+        )
+        return receipt
+
+    def verify_historical_migration_amendment(
+        self, receipt_id: str, manifest: dict[str, Any]
+    ) -> dict[str, Any]:
+        return HistoricalMigrationAmendmentV2ReceiptVerifier(
+            self.paths, self.authority_root, self.schemas, clock=self.clock
+        ).verify(receipt_id, manifest)
+
+    def read_historical_migration_amendment_evidence(
+        self, receipt_id: str, manifest: dict[str, Any]
+    ) -> tuple[bytes, bytes]:
+        self.verify_historical_migration_amendment(receipt_id, manifest)
+        return (
+            _read_bytes(self.historical_migration_amendment_display_root / f"{receipt_id}.json"),
+            _read_bytes(self.historical_migration_amendment_receipt_root / f"{receipt_id}.json"),
+        )
+
+    def verify_archived_historical_migration_amendment(
+        self,
+        receipt_id: str,
+        manifest: dict[str, Any],
+        *,
+        display_root: Path,
+        receipt_root: Path,
+    ) -> dict[str, Any]:
+        return HistoricalMigrationAmendmentV2ReceiptVerifier(
+            self.paths,
+            self.authority_root,
+            self.schemas,
+            clock=self.clock,
+            display_root=display_root,
+            receipt_root=receipt_root,
+        ).verify_archived(receipt_id, manifest)
 
     def authorize_transaction(
         self, manifest: dict[str, Any]
@@ -1222,6 +2495,267 @@ class DirectPrivateV2ReceiptVerifier:
         return receipt, manifest
 
 
+class ChatFirstU1SaveV2ReceiptVerifier:
+    """Replay-verify only v2-signed receipts for one Chat-first U1 save manifest."""
+
+    purpose = "chat_first_u1_save"
+    manifest_schema = "chat-first-u1-save-manifest"
+    receipt_schema = "chat-first-u1-save-receipt"
+    signed_schema = "chat-first-u1-save-signed-receipt"
+    receipt_directory = "chat-first-u1-save"
+
+    def __init__(
+        self,
+        paths: RuntimePaths,
+        authority_root: Path,
+        schemas: SchemaRegistry,
+        *,
+        clock: Callable[[], datetime] = aware_utc_now,
+        display_root: Path | None = None,
+        receipt_root: Path | None = None,
+    ) -> None:
+        self.paths = paths
+        self.authority_root = authority_root.resolve()
+        self.schemas = schemas
+        self.clock = clock
+        self._display_root = display_root
+        self._receipt_root = receipt_root
+
+    @property
+    def authority_path(self) -> Path:
+        return self.authority_root / "local-confirmation-v2.authority.json"
+
+    @property
+    def receipt_root(self) -> Path:
+        if self._receipt_root is not None:
+            return self._receipt_root
+        return self.paths.evidence_root / "local-confirmation-v2" / self.receipt_directory / "receipts"
+
+    @property
+    def display_root(self) -> Path:
+        if self._display_root is not None:
+            return self._display_root
+        return self.paths.evidence_root / "local-confirmation-v2" / self.receipt_directory / "displays"
+
+    def require_manifest(self, manifest: dict[str, Any]) -> None:
+        _require_chat_first_u1_save_manifest(manifest, self.schemas)
+
+    def verify(self, receipt_id: str, manifest: dict[str, Any]) -> dict[str, Any]:
+        """Return only an unexpired receipt bound to the exact displayed proposal."""
+
+        return self._verify(receipt_id, manifest, archived=False)
+
+    def verify_archived(self, receipt_id: str, manifest: dict[str, Any]) -> dict[str, Any]:
+        """Verify committed archival evidence after its authorization window has elapsed.
+
+        Expiry limits when a receipt may authorize publication.  Once the exact evidence is bound by
+        a canonical event, later recovery instead proves that issuance and confirmation happened
+        inside that window.  Signature, display, authority and manifest checks remain identical.
+        """
+
+        return self._verify(receipt_id, manifest, archived=True)
+
+    def _verify(
+        self, receipt_id: str, manifest: dict[str, Any], *, archived: bool
+    ) -> dict[str, Any]:
+        """Verify shared bindings and apply live or archival time semantics."""
+
+        self.require_manifest(manifest)
+        try:
+            authority = _load_record(
+                self.authority_path,
+                self.schemas,
+                "local-confirmation-v2-authority",
+                schema_version="2.0",
+            )
+            record = _load_record(
+                self.receipt_root / f"{receipt_id}.json",
+                self.schemas,
+                self.signed_schema,
+                schema_version="1.0",
+            )
+            receipt = record["receipt"]
+            self.schemas.require(self.receipt_schema, receipt)
+            stored_manifest = record["manifest"]
+            self.require_manifest(stored_manifest)
+            display_bytes = _read_bytes(self.display_root / f"{receipt_id}.json")
+            if any(
+                (
+                    authority["status"] != "active",
+                    authority["authority_id"] != AUTHORITY_ID_V2,
+                    authority["algorithm"] != ALGORITHM,
+                    authority["bundle_id"] != record["authority_bundle_id"],
+                    authority["key_id"] != record["key_id"],
+                    record["receipt_type"] != self.purpose,
+                    record["authority_id"] != AUTHORITY_ID_V2,
+                    record["manifest"] != manifest,
+                    record["manifest_digest"] != manifest["manifest_digest"],
+                    stored_manifest["manifest_digest"] != manifest["manifest_digest"],
+                    receipt["receipt_id"] != receipt_id,
+                    receipt["authority_id"] != AUTHORITY_ID_V2,
+                    receipt["purpose"] != self.purpose,
+                    receipt["admission_id"] != manifest["admission_id"],
+                    receipt["bundle_id"] != manifest["bundle_id"],
+                    receipt["manifest_digest"] != manifest["manifest_digest"],
+                    receipt["expires_at"] != manifest["expires_at"],
+                    record["confirmation_display_sha256"] != sha256_hex(display_bytes),
+                )
+            ):
+                raise LocalConfirmationV2Error("Chat-first U1 receipt binding is invalid")
+            public_bytes = base64.b64decode(authority["public_key_base64"], validate=True)
+            signature = base64.b64decode(record["signature_base64"], validate=True)
+            Ed25519PublicKey.from_public_bytes(public_bytes).verify(
+                signature, canonical_bytes(_signature_material(record))
+            )
+            now = self.clock()
+            if now.tzinfo is None or now.utcoffset() is None:
+                raise ValueError("clock must return a timezone-aware instant")
+            current = now.astimezone(UTC)
+            issued_at = _parse_timestamp(receipt["issued_at"])
+            confirmed_at = _parse_timestamp(record["confirmed_at"])
+            expires_at = _parse_timestamp(receipt["expires_at"])
+            if issued_at > current or confirmed_at > current:
+                raise LocalConfirmationV2Error("Chat-first U1 receipt is future-issued")
+            if confirmed_at < issued_at:
+                raise LocalConfirmationV2Error("Chat-first U1 confirmation predates receipt issuance")
+            if issued_at >= expires_at or confirmed_at >= expires_at:
+                raise LocalConfirmationV2Error("Chat-first U1 receipt was issued outside its window")
+            if not archived and expires_at <= current:
+                raise LocalConfirmationV2Error("Chat-first U1 receipt is expired")
+        except (
+            InvalidSignature,
+            KeyError,
+            TypeError,
+            ValidationError,
+            ValueError,
+            OSError,
+            LocalConfirmationV2Error,
+        ) as exc:
+            raise LocalConfirmationV2Error("Chat-first U1 receipt did not verify") from exc
+        return receipt
+
+
+class ChatFirstU1MultiSourceSaveV2ReceiptVerifier(ChatFirstU1SaveV2ReceiptVerifier):
+    """Replay-verify only the separately purpose-bound ordered multi-source U1 receipts."""
+
+    purpose = "chat_first_u1_multi_source_save"
+    manifest_schema = "chat-first-u1-multi-source-save-manifest"
+    receipt_schema = "chat-first-u1-multi-source-save-receipt"
+    signed_schema = "chat-first-u1-multi-source-save-signed-receipt"
+    receipt_directory = "chat-first-u1-multi-source-save"
+
+    def require_manifest(self, manifest: dict[str, Any]) -> None:
+        _require_chat_first_u1_multi_source_save_manifest(manifest, self.schemas)
+
+
+class ChatFirstU1MultiSourceKnowledgeSaveV2ReceiptVerifier(ChatFirstU1SaveV2ReceiptVerifier):
+    """Replay-verify only the separately purpose-bound knowledge-lineage U1 receipts."""
+
+    purpose = "chat_first_u1_multi_source_knowledge_save"
+    manifest_schema = "chat-first-u1-multi-source-knowledge-save-manifest"
+    receipt_schema = "chat-first-u1-multi-source-knowledge-save-receipt"
+    signed_schema = "chat-first-u1-multi-source-knowledge-save-signed-receipt"
+    receipt_directory = "chat-first-u1-multi-source-knowledge-save"
+
+    def require_manifest(self, manifest: dict[str, Any]) -> None:
+        _require_chat_first_u1_multi_source_knowledge_save_manifest(manifest, self.schemas)
+
+
+class ChatFirstU1CitationRecoveryV2ReceiptVerifier(ChatFirstU1SaveV2ReceiptVerifier):
+    """Replay-verify only append-only citation-recovery U1 receipts."""
+
+    purpose = "chat_first_u1_citation_recovery"
+    manifest_schema = "chat-first-u1-citation-recovery-manifest"
+    receipt_schema = "chat-first-u1-citation-recovery-receipt"
+    signed_schema = "chat-first-u1-citation-recovery-signed-receipt"
+    receipt_directory = "chat-first-u1-citation-recovery"
+
+    def require_manifest(self, manifest: dict[str, Any]) -> None:
+        _require_chat_first_u1_citation_recovery_manifest(manifest, self.schemas)
+
+
+class ChatFirstU1PrimaryArtifactRetrofitV2ReceiptVerifier(ChatFirstU1SaveV2ReceiptVerifier):
+    """Replay-verify only the purpose-separated three-wave presentation retrofit."""
+
+    purpose = "chat_first_u1_primary_artifact_retrofit"
+    manifest_schema = "chat-first-u1-primary-artifact-retrofit-manifest"
+    receipt_schema = "chat-first-u1-primary-artifact-retrofit-receipt"
+    signed_schema = "chat-first-u1-primary-artifact-retrofit-signed-receipt"
+    receipt_directory = "chat-first-u1-primary-artifact-retrofit"
+
+    def require_manifest(self, manifest: dict[str, Any]) -> None:
+        _require_chat_first_u1_primary_artifact_retrofit_manifest(manifest, self.schemas)
+
+
+class ArchivePreservationV2ReceiptVerifier(ChatFirstU1SaveV2ReceiptVerifier):
+    """Replay-verify only local-only opaque archive-preservation receipts."""
+
+    purpose = "archive_preservation"
+    manifest_schema = "archive-preservation-manifest"
+    receipt_schema = "archive-preservation-receipt"
+    signed_schema = "archive-preservation-signed-receipt"
+    receipt_directory = "archive-preservation"
+
+    def require_manifest(self, manifest: dict[str, Any]) -> None:
+        _require_archive_preservation_manifest(manifest, self.schemas)
+
+
+class HistoricalActivityReconstructionV2ReceiptVerifier(ChatFirstU1SaveV2ReceiptVerifier):
+    """Replay-verify candidate-only historical cohort receipts."""
+
+    purpose = "historical_activity_reconstruction"
+    manifest_schema = "historical-activity-reconstruction-manifest"
+    receipt_schema = "historical-activity-reconstruction-receipt"
+    signed_schema = "historical-activity-reconstruction-signed-receipt"
+    receipt_directory = "historical-activity-reconstruction"
+
+    def require_manifest(self, manifest: dict[str, Any]) -> None:
+        _require_historical_activity_reconstruction_manifest(manifest, self.schemas)
+
+
+class HistoricalWeeklyActivityReconstructionV2ReceiptVerifier(
+    ChatFirstU1SaveV2ReceiptVerifier
+):
+    """Replay-verify only additive multi-parent historical weekly receipts."""
+
+    purpose = "historical_weekly_activity_reconstruction"
+    manifest_schema = "historical-weekly-activity-reconstruction-manifest"
+    receipt_schema = "historical-weekly-activity-reconstruction-receipt"
+    signed_schema = "historical-weekly-activity-reconstruction-signed-receipt"
+    receipt_directory = "historical-weekly-activity-reconstruction"
+
+    def require_manifest(self, manifest: dict[str, Any]) -> None:
+        _require_historical_weekly_activity_reconstruction_manifest(manifest, self.schemas)
+
+
+class HistoricalOwnerConfirmedContinuitySupplementV2ReceiptVerifier(
+    ChatFirstU1SaveV2ReceiptVerifier
+):
+    """Replay-verify only append-only owner-confirmed historical context evidence."""
+
+    purpose = "historical_owner_confirmed_continuity_supplement"
+    manifest_schema = "historical-owner-confirmed-continuity-supplement-manifest"
+    receipt_schema = "historical-owner-confirmed-continuity-supplement-receipt"
+    signed_schema = "historical-owner-confirmed-continuity-supplement-signed-receipt"
+    receipt_directory = "historical-owner-confirmed-continuity-supplement"
+
+    def require_manifest(self, manifest: dict[str, Any]) -> None:
+        _require_historical_owner_confirmed_continuity_supplement_manifest(manifest, self.schemas)
+
+
+class HistoricalMigrationAmendmentV2ReceiptVerifier(ChatFirstU1SaveV2ReceiptVerifier):
+    """Replay-verify exact-parent append-only historical amendment receipts."""
+
+    purpose = "historical_migration_amendment"
+    manifest_schema = "historical-migration-amendment-manifest"
+    receipt_schema = "historical-migration-amendment-receipt"
+    signed_schema = "historical-migration-amendment-signed-receipt"
+    receipt_directory = "historical-migration-amendment"
+
+    def require_manifest(self, manifest: dict[str, Any]) -> None:
+        _require_historical_migration_amendment_manifest(manifest, self.schemas)
+
+
 class PublicResearchReceiptVerifier:
     """Replay-verify purpose-separated public-research receipts from runtime evidence."""
 
@@ -1592,6 +3126,240 @@ def require_public_research_manifest(manifest: dict[str, Any], schemas: SchemaRe
         else datetime.min.replace(tzinfo=UTC)
     ):
         raise LocalConfirmationV2Error("public-research receipt expiry must follow retrieval")
+
+
+def _require_chat_first_u1_save_manifest(
+    manifest: dict[str, Any], schemas: SchemaRegistry
+) -> None:
+    """Validate the ordinary U1 save contract independently of every other v2 purpose."""
+
+    schemas.require("chat-first-u1-save-manifest", manifest)
+    expected_digest = canonical_sha256(
+        {key: value for key, value in manifest.items() if key != "manifest_digest"}
+    )
+    if not hmac.compare_digest(manifest["manifest_digest"], expected_digest):
+        raise LocalConfirmationV2Error("Chat-first U1 manifest digest is invalid")
+    if manifest["purpose"] != "chat_first_u1_save" or manifest["authority_id"] != AUTHORITY_ID_V2:
+        raise LocalConfirmationV2Error("Chat-first U1 manifest is outside its purpose boundary")
+
+
+def _require_chat_first_u1_multi_source_save_manifest(
+    manifest: dict[str, Any], schemas: SchemaRegistry
+) -> None:
+    """Validate the ordered multi-source U1 contract independently of ordinary one-source U1."""
+
+    schemas.require("chat-first-u1-multi-source-save-manifest", manifest)
+    expected_digest = canonical_sha256(
+        {key: value for key, value in manifest.items() if key != "manifest_digest"}
+    )
+    if not hmac.compare_digest(manifest["manifest_digest"], expected_digest):
+        raise LocalConfirmationV2Error("multi-source Chat-first U1 manifest digest is invalid")
+    if (
+        manifest["purpose"] != "chat_first_u1_multi_source_save"
+        or manifest["authority_id"] != AUTHORITY_ID_V2
+        or tuple(item["role"] for item in manifest["source_items"]) != ("M1", "W1", "W2", "W3")
+        or canonical_sha256(manifest["source_items"]) != manifest["ingress_set_sha256"]
+    ):
+        raise LocalConfirmationV2Error("multi-source Chat-first U1 manifest is outside its purpose boundary")
+
+
+def _require_chat_first_u1_multi_source_knowledge_save_manifest(
+    manifest: dict[str, Any], schemas: SchemaRegistry
+) -> None:
+    """Validate knowledge-lineage U1 without widening one-source or work-continuity U1."""
+
+    schemas.require("chat-first-u1-multi-source-knowledge-save-manifest", manifest)
+    expected_digest = canonical_sha256(
+        {key: value for key, value in manifest.items() if key != "manifest_digest"}
+    )
+    if not hmac.compare_digest(manifest["manifest_digest"], expected_digest):
+        raise LocalConfirmationV2Error("knowledge multi-source Chat-first U1 manifest digest is invalid")
+    if (
+        manifest["purpose"] != "chat_first_u1_multi_source_knowledge_save"
+        or manifest["authority_id"] != AUTHORITY_ID_V2
+        or tuple(item["role"] for item in manifest["source_items"]) != ("K1", "K2", "K3", "K4")
+        or canonical_sha256(manifest["source_items"]) != manifest["ingress_set_sha256"]
+    ):
+        raise LocalConfirmationV2Error("knowledge multi-source Chat-first U1 manifest is outside its purpose boundary")
+
+
+def _require_chat_first_u1_citation_recovery_manifest(
+    manifest: dict[str, Any], schemas: SchemaRegistry
+) -> None:
+    """Validate the recovery purpose without widening either existing U1 purpose."""
+
+    schemas.require("chat-first-u1-citation-recovery-manifest", manifest)
+    expected_digest = canonical_sha256(
+        {key: value for key, value in manifest.items() if key != "manifest_digest"}
+    )
+    if not hmac.compare_digest(manifest["manifest_digest"], expected_digest):
+        raise LocalConfirmationV2Error("citation-recovery U1 manifest digest is invalid")
+    if (
+        manifest["purpose"] != "chat_first_u1_citation_recovery"
+        or manifest["authority_id"] != AUTHORITY_ID_V2
+        or tuple(item["role"] for item in manifest["source_items"]) != ("M1", "W1", "W2", "W3")
+        or manifest["recovered_claim_count"] + manifest["withheld_claim_count"]
+        != manifest["claim_count"]
+    ):
+        raise LocalConfirmationV2Error("citation-recovery U1 manifest is outside its purpose boundary")
+
+
+def _require_chat_first_u1_primary_artifact_retrofit_manifest(
+    manifest: dict[str, Any], schemas: SchemaRegistry
+) -> None:
+    """Validate the new retrofit purpose without widening an existing U1 contract."""
+
+    schemas.require("chat-first-u1-primary-artifact-retrofit-manifest", manifest)
+    material = {key: value for key, value in manifest.items() if key != "manifest_digest"}
+    if manifest["manifest_digest"] != canonical_sha256(material):
+        raise LocalConfirmationV2Error("primary-artifact retrofit manifest digest changed")
+    retrofits = manifest["retrofits"]
+    if (
+        manifest["purpose"] != "chat_first_u1_primary_artifact_retrofit"
+        or manifest["authority_id"] != AUTHORITY_ID_V2
+        or tuple(item["wave_id"] for item in retrofits) != ("S6-W1", "S6-W2", "S6-W3")
+        or bool(retrofits[0]["support_event_ids"])
+        or len(retrofits[1]["support_event_ids"]) != 1
+        or bool(retrofits[2]["support_event_ids"])
+    ):
+        raise LocalConfirmationV2Error("primary-artifact retrofit is outside its purpose boundary")
+
+
+def _require_archive_preservation_manifest(manifest: dict[str, Any], schemas: SchemaRegistry) -> None:
+    """Validate the purpose without allowing content-index or semantic-migration scope."""
+
+    schemas.require("archive-preservation-manifest", manifest)
+    material = {key: value for key, value in manifest.items() if key != "manifest_digest"}
+    if manifest["manifest_digest"] != canonical_sha256(material):
+        raise LocalConfirmationV2Error("archive preservation manifest digest changed")
+    if (
+        manifest["purpose"] != "archive_preservation"
+        or manifest["authority_id"] != AUTHORITY_ID_V2
+        or manifest["disclosure"] != "local_only_no_content_index"
+        or manifest["retention"] != "append_only_archive_preservation"
+        or "build_metadata_catalogue" not in manifest["operations"]
+    ):
+        raise LocalConfirmationV2Error("archive preservation is outside its purpose boundary")
+
+
+def _require_historical_activity_reconstruction_manifest(
+    manifest: dict[str, Any], schemas: SchemaRegistry
+) -> None:
+    """Validate the candidate-only historical migration purpose without current-state authority."""
+
+    schemas.require("historical-activity-reconstruction-manifest", manifest)
+    material = {key: value for key, value in manifest.items() if key != "manifest_digest"}
+    if manifest["manifest_digest"] != canonical_sha256(material):
+        raise LocalConfirmationV2Error("historical activity manifest digest changed")
+    if (
+        manifest["purpose"] != "historical_activity_reconstruction"
+        or manifest["authority_id"] != AUTHORITY_ID_V2
+        or manifest["family"] != "meeting_workstream_history"
+        or manifest["candidate_only"] is not True
+        or manifest["disclosure"]
+        != "hybrid_visible_hosted_exact_packs_local_private_storage"
+        or manifest["operations"]
+        != [
+            "append_candidate_historical_activity",
+            "build_candidate_fts5",
+            "build_historical_activity_views",
+        ]
+    ):
+        raise LocalConfirmationV2Error("historical activity is outside its purpose boundary")
+
+
+def _require_historical_weekly_activity_reconstruction_manifest(
+    manifest: dict[str, Any], schemas: SchemaRegistry
+) -> None:
+    """Validate the additive multi-parent weekly purpose without changing older H2."""
+
+    schemas.require("historical-weekly-activity-reconstruction-manifest", manifest)
+    material = {key: value for key, value in manifest.items() if key != "manifest_digest"}
+    if manifest["manifest_digest"] != canonical_sha256(material):
+        raise LocalConfirmationV2Error("historical weekly manifest digest changed")
+    if (
+        manifest["purpose"] != "historical_weekly_activity_reconstruction"
+        or manifest["authority_id"] != AUTHORITY_ID_V2
+        or manifest["family"] != "meeting_workstream_history"
+        or manifest["candidate_only"] is not True
+        or manifest["disclosure"]
+        != "hybrid_visible_hosted_exact_packs_local_private_storage"
+        or manifest["operations"]
+        != [
+            "append_candidate_historical_weekly_activity",
+            "build_candidate_weekly_fts5",
+            "build_historical_weekly_views",
+        ]
+        or len(manifest["parent_bindings"]) < 2
+        or manifest["parent_set_digest"] != canonical_sha256(manifest["parent_bindings"])
+        or manifest["catalogue_set_digest"]
+        != canonical_sha256(
+            [binding.get("catalogue_digest") for binding in manifest["parent_bindings"]]
+        )
+    ):
+        raise LocalConfirmationV2Error("historical weekly activity is outside its purpose boundary")
+
+
+def _require_historical_owner_confirmed_continuity_supplement_manifest(
+    manifest: dict[str, Any], schemas: SchemaRegistry
+) -> None:
+    """Keep owner-context statements separate from every source-extracted history purpose."""
+
+    schemas.require("historical-owner-confirmed-continuity-supplement-manifest", manifest)
+    material = {key: value for key, value in manifest.items() if key != "manifest_digest"}
+    if manifest["manifest_digest"] != canonical_sha256(material):
+        raise LocalConfirmationV2Error("owner-context manifest digest changed")
+    if (
+        manifest["purpose"] != "historical_owner_confirmed_continuity_supplement"
+        or manifest["authority_id"] != AUTHORITY_ID_V2
+        or manifest["disclosure"]
+        != "local_private_owner_confirmed_context_fixed_admitted_scope"
+        or manifest["retention"] != "append_only_owner_confirmed_historical_context"
+        or manifest["operations"]
+        != [
+            "stage_owner_confirmed_continuity_supplement",
+            "append_owner_confirmed_continuity_event",
+            "build_owner_context_fts5",
+            "build_owner_context_workspace",
+        ]
+        or manifest["candidate_only"] is not True
+        or manifest["no_current_work_adoption"] is not True
+        or len(manifest["parent_bindings"]) != 4
+        or len(manifest["owner_context_statements"]) != 4
+        or manifest["statement_ids"]
+        != [item.get("statement_id") for item in manifest["owner_context_statements"]]
+        or manifest["parent_set_digest"] != canonical_sha256(manifest["parent_bindings"])
+    ):
+        raise LocalConfirmationV2Error("owner-context supplement is outside its purpose boundary")
+
+
+def _require_historical_migration_amendment_manifest(
+    manifest: dict[str, Any], schemas: SchemaRegistry
+) -> None:
+    """Keep migration corrections parent-bound, candidate-only, and append-only."""
+
+    schemas.require("historical-migration-amendment-manifest", manifest)
+    material = {key: value for key, value in manifest.items() if key != "manifest_digest"}
+    if manifest["manifest_digest"] != canonical_sha256(material):
+        raise LocalConfirmationV2Error("historical amendment manifest digest changed")
+    if (
+        manifest["purpose"] != "historical_migration_amendment"
+        or manifest["authority_id"] != AUTHORITY_ID_V2
+        or manifest["disclosure"]
+        != "local_private_exact_parent_append_only_amendment"
+        or manifest["retention"] != "append_only_historical_migration_amendment"
+        or manifest["operations"]
+        != [
+            "append_historical_migration_amendment",
+            "build_amendment_fts5",
+            "build_amendment_workspace",
+        ]
+        or manifest["candidate_only"] is not True
+        or manifest["no_current_work"] is not True
+        or len(manifest["entry_ids"]) != 3
+        or len(set(manifest["entry_ids"])) != 3
+    ):
+        raise LocalConfirmationV2Error("historical amendment is outside its purpose boundary")
 
 
 def _require_direct_private_purpose(purpose: str) -> None:

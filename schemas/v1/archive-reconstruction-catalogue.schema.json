@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "component", "parent_event_id", "parent_manifest_digest", "entries", "excluded_member_count", "catalogue_digest"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "component": {"const": "vault-next-historical-reconstruction/1.0.0"},
+    "parent_event_id": {"type": "string", "minLength": 1},
+    "parent_manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "entries": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false, "required": ["member_ref", "lane_id", "member_id", "relative_locator", "profile", "byte_count", "content_sha256", "duplicate_group", "source_class"], "properties": {"member_ref": {"type": "string", "minLength": 1}, "lane_id": {"type": "string", "minLength": 1}, "member_id": {"type": "string", "minLength": 1}, "relative_locator": {"type": "string", "minLength": 1}, "profile": {"type": "string", "minLength": 1}, "byte_count": {"type": "integer"}, "content_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "duplicate_group": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "source_class": {"enum": ["legacy_vault", "claude_export", "codex_export"]}}}},
+    "excluded_member_count": {"type": "integer"},
+    "catalogue_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

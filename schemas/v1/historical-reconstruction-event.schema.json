@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "event_id", "publication_type", "parent_event_id", "parent_manifest_digest", "manifest_digest", "package_digest", "receipt_id", "candidate_only", "recorded_at"],
+  "properties": {
+    "schema_version": {"const": "1.0"}, "event_id": {"type": "string", "minLength": 1}, "publication_type": {"const": "historical_reconstruction"},
+    "parent_event_id": {"type": "string", "minLength": 1}, "parent_manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "package_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "receipt_id": {"type": "string", "minLength": 1}, "candidate_only": {"const": true}, "recorded_at": {"type": "string", "format": "date-time"}
+  }
+}

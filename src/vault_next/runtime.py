@@ -332,6 +332,8 @@ class CaseSessionRuntime:
             "work_item.recorded",
             "work_item.status_changed",
             "chat_ingress.save_committed",
+            "private_admission.recorded",
+            "private_admission.deactivated",
             "outcome.assessed",
         }
         if event_type not in allowed:

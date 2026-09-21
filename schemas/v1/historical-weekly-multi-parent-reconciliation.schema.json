@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "component", "reconciliation_kind", "cohort_id", "parent_set_digest", "catalogue_set_digest", "prior_cohort_digests", "new_observation_digests", "prior_endpoint_digests", "lineages", "relationships", "temporal_reconciliation", "coverage_register", "global_views", "candidate_only", "no_current_work", "no_promotion", "no_activation", "no_u2", "reconciliation_digest"],
+  "properties": {
+    "schema_version": {"const": "1.0"}, "component": {"const": "vault-next-historical-weekly-multi-parent-reconciliation/1.0.0"},
+    "reconciliation_kind": {"enum": ["incremental", "full_corpus"]}, "cohort_id": {"type": "string", "minLength": 1},
+    "parent_set_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "catalogue_set_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "prior_cohort_digests": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}},
+    "new_observation_digests": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}},
+    "prior_endpoint_digests": {"type": "array", "uniqueItems": true, "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}},
+    "lineages": {"type": "array", "items": {"type": "object"}}, "relationships": {"type": "array", "items": {"type": "object"}},
+    "temporal_reconciliation": {"type": "object"}, "coverage_register": {"type": "object"}, "global_views": {"type": "object"},
+    "candidate_only": {"const": true}, "no_current_work": {"const": true}, "no_promotion": {"const": true},
+    "no_activation": {"const": true}, "no_u2": {"const": true},
+    "reconciliation_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

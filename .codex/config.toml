@@ -1,0 +1,7 @@
+# CF2-A only: Codex Desktop Local launches this one project-scoped child over STDIO.
+# It has no listener, remote endpoint, plugin, proxy, credential, or persistent-root setting.
+[mcp_servers.vault_next_chat_first]
+command = "/Users/elena/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3"
+args = ["-m", "vault_next.codex_mcp"]
+cwd = "/Users/elena/vault-next"
+env = { PYTHONPATH = "/Users/elena/vault-next/src" }

@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "component", "wave_digests", "strand_aliases", "project_aliases", "transitions", "global_views", "candidate_only", "no_current_work", "no_promotion", "no_activation", "no_u2", "reconciliation_digest"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "component": {"const": "vault-next-historical-weekly-cross-wave-reconciliation/1.0.0"},
+    "wave_digests": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}},
+    "strand_aliases": {"type": "array", "items": {"type": "object"}},
+    "project_aliases": {"type": "array", "items": {"type": "object"}},
+    "transitions": {"type": "array", "items": {"type": "object"}},
+    "global_views": {"type": "object"},
+    "candidate_only": {"const": true},
+    "no_current_work": {"const": true},
+    "no_promotion": {"const": true},
+    "no_activation": {"const": true},
+    "no_u2": {"const": true},
+    "reconciliation_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

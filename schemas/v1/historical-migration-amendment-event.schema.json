@@ -1,0 +1,19 @@
+{
+  "$id": "vault-next://schemas/v1/historical-migration-amendment-event",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object", "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "record_type": {"const": "historical_migration_amendment_published/1.0"},
+    "event_id": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$"},
+    "recorded_at": {"format": "date-time"},
+    "manifest_digest": {"pattern": "^[0-9a-f]{64}$"},
+    "package_digest": {"pattern": "^[0-9a-f]{64}$"},
+    "parent_event_id": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$"},
+    "receipt_id": {"pattern": "^receipt_[0-7][0-9A-HJKMNP-TV-Z]{25}$"},
+    "candidate_only": {"const": true},
+    "no_current_work": {"const": true},
+    "parent_records_unchanged": {"const": true}
+  },
+  "required": ["schema_version", "record_type", "event_id", "recorded_at", "manifest_digest", "package_digest", "parent_event_id", "receipt_id", "candidate_only", "no_current_work", "parent_records_unchanged"]
+}

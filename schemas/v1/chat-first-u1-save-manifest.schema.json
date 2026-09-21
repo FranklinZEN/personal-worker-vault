@@ -1,0 +1,55 @@
+{
+  "$id": "vault-next://schemas/v1/chat-first-u1-save-manifest",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "admission_id": {"pattern": "^private_admission_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "artifact_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "authority_id": {"const": "vault-next-local-confirmation/v2", "type": "string"},
+    "bundle_id": {"pattern": "^private_bundle_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "candidate_package_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "citations": {"items": {"minLength": 1, "type": "string"}, "minItems": 1, "type": "array", "uniqueItems": true},
+    "component": {"const": "vault-next-private-workspace-projection/0.1.0", "type": "string"},
+    "disclosure": {"const": "visible_hosted_reasoning", "type": "string"},
+    "expires_at": {"format": "date-time", "type": "string"},
+    "ingress_envelope_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "manifest_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "operations": {"const": ["stage_immutable_objects", "append_private_admission_event", "rebuild_local_fts5", "rebuild_private_workspace"], "type": "array"},
+    "profile_id": {"enum": ["plain_text", "markdown_text", "docx_wordprocessingml"], "type": "string"},
+    "purpose": {"const": "chat_first_u1_save", "type": "string"},
+    "relationship_ledger_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "retention": {"const": "R1_immutable", "type": "string"},
+    "safe_label": {"maxLength": 180, "minLength": 1, "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "source_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "source_size": {"type": "integer"},
+    "u0_result_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "wave_scope": {
+      "additionalProperties": false,
+      "properties": {
+        "excluded_inputs": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+        "selected_inputs": {
+          "items": {
+            "additionalProperties": false,
+            "properties": {
+              "content_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+              "role": {"enum": ["E1", "M1", "M2"], "type": "string"},
+              "safe_label": {"minLength": 1, "type": "string"},
+              "source_locator": {"minLength": 1, "type": "string"}
+            },
+            "required": ["role", "source_locator", "safe_label", "content_sha256"],
+            "type": "object"
+          },
+          "minItems": 3,
+          "type": "array"
+        },
+        "wave_id": {"const": "S6-W1-C1", "type": "string"}
+      },
+      "required": ["wave_id", "selected_inputs", "excluded_inputs"],
+      "type": "object"
+    }
+  },
+  "required": ["schema_version", "component", "purpose", "authority_id", "admission_id", "bundle_id", "ingress_envelope_sha256", "source_sha256", "source_size", "u0_result_sha256", "artifact_sha256", "candidate_package_sha256", "profile_id", "safe_label", "citations", "disclosure", "retention", "operations", "expires_at", "manifest_digest"],
+  "title": "Real-private Chat-first U1 save manifest",
+  "type": "object"
+}

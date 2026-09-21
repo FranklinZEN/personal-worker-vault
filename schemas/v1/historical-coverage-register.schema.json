@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "component", "catalogue_digest", "entries", "counts", "candidate_only", "no_current_work", "no_promotion", "no_activation", "no_u2", "coverage_digest"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "component": {"const": "vault-next-historical-cross-wave-reconciliation/1.0.0"},
+    "catalogue_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "entries": {"type": "array", "minItems": 1, "items": {"type": "object", "additionalProperties": false, "required": ["member_ref", "object_digest", "state", "reason", "observation_ids", "cohort_ids"], "properties": {"member_ref": {"type": "string", "minLength": 1}, "object_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "state": {"enum": ["admitted", "calibrated_only", "excluded", "unsupported", "deferred", "failed", "unresolved"]}, "reason": {"type": "string", "minLength": 1}, "observation_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}, "cohort_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}}}},
+    "counts": {"type": "object", "additionalProperties": false, "required": ["admitted", "calibrated_only", "excluded", "unsupported", "deferred", "failed", "unresolved"], "properties": {"admitted": {"type": "integer"}, "calibrated_only": {"type": "integer"}, "excluded": {"type": "integer"}, "unsupported": {"type": "integer"}, "deferred": {"type": "integer"}, "failed": {"type": "integer"}, "unresolved": {"type": "integer"}}},
+    "candidate_only": {"const": true}, "no_current_work": {"const": true},
+    "no_promotion": {"const": true}, "no_activation": {"const": true}, "no_u2": {"const": true},
+    "coverage_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

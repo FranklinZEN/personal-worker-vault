@@ -1,0 +1,20 @@
+{
+  "$id": "vault-next://schemas/v1/knowledge-lineage-candidate-package",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Inactive knowledge-lineage method candidate package",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "1.0", "type": "string"},
+    "candidate_id": {"pattern": "^skill_candidate_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "family": {"const": "knowledge_lineage", "type": "string"},
+    "method_name": {"const": "knowledge-lineage", "type": "string"},
+    "method_version": {"pattern": "^0\\.[0-9]+\\.[0-9]+$", "type": "string"},
+    "method_source_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "method_source_markdown": {"type": "string"},
+    "portable_core": {"type": "array", "items": {"type": "string"}},
+    "prohibitions": {"type": "array", "items": {"type": "string"}},
+    "lifecycle": {"const": "inactive", "type": "string"}
+  },
+  "required": ["schema_version", "candidate_id", "family", "method_name", "method_version", "method_source_sha256", "method_source_markdown", "portable_core", "prohibitions", "lifecycle"]
+}

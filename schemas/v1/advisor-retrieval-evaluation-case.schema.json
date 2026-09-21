@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "case_id", "intent", "temporal_mode", "query", "scope", "expected_record_ids", "forbidden_record_ids", "required_labels", "expected_unknowns", "different_wording", "synthetic_only"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "case_id": {"type": "string", "minLength": 1},
+    "intent": {"enum": ["next_meeting", "direction_change", "analogous_case", "leadership_evidence", "public_practice_comparison"]},
+    "temporal_mode": {"enum": ["current", "as_of", "comparative"]},
+    "query": {"type": "string", "minLength": 1},
+    "scope": {"type": "string", "minLength": 1},
+    "expected_record_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "forbidden_record_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "required_labels": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "expected_unknowns": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "different_wording": {"type": "boolean"},
+    "synthetic_only": {"const": true}
+  }
+}

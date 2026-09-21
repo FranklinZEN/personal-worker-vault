@@ -1,0 +1,22 @@
+{
+  "$id": "vault-next://schemas/v1/working-artifact-evaluation",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "activation_authority": {"const": false, "type": "boolean"},
+    "artifact_disposition": {"enum": ["accept", "revise", "reject"], "type": "string"},
+    "artifact_id": {"pattern": "^artifact_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "component": {"const": "vault-next-working-artifact/0.2.0", "type": "string"},
+    "independent_gates": {"const": true, "type": "boolean"},
+    "platform_integrity": {"enum": ["pass", "fail"], "type": "string"},
+    "revision_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "revision_id": {"pattern": "^artifact_version_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "skill_candidate_state": {"enum": ["not_evaluated", "collecting", "needs_refinement", "eligible_for_activation_review", "declined"], "type": "string"},
+    "skill_candidate_version": {"minLength": 1, "type": ["string", "null"]},
+    "workflow_experience": {"enum": ["pass", "partial", "fail"], "type": "string"}
+  },
+  "required": ["schema_version", "component", "artifact_id", "revision_id", "revision_digest", "platform_integrity", "workflow_experience", "artifact_disposition", "skill_candidate_state", "skill_candidate_version", "independent_gates", "activation_authority"],
+  "title": "Separated platform, workflow, artifact and skill evaluation",
+  "type": "object"
+}

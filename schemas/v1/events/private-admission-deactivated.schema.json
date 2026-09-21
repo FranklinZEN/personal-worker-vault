@@ -1,0 +1,11 @@
+{
+  "$id": "vault-next://schemas/v1/events/private-admission-deactivated",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "admission_id": {"pattern": "^private_admission_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"}
+  },
+  "required": ["admission_id"],
+  "title": "F1 synthetic private-admission logical deactivation payload",
+  "type": "object"
+}

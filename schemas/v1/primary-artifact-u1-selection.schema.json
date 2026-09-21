@@ -1,0 +1,23 @@
+{
+  "$id": "vault-next://schemas/v1/primary-artifact-u1-selection",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "complete_package": {"const": true, "type": "boolean"},
+    "component": {"const": "vault-next-primary-artifact/0.1.0", "type": "string"},
+    "context_selection_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "no_receipt_issued": {"const": true, "type": "boolean"},
+    "package_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "primary_selection": {"type": "object"},
+    "purpose": {"const": "chat_first_u1_primary_artifact_save_proposal", "type": "string"},
+    "requires_confirmation": {"const": true, "type": "boolean"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "selection_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "supporting_selections": {"items": {"type": "object"}, "type": "array"},
+    "target_state": {"enum": ["review_copy", "final"], "type": "string"},
+    "u2_authority": {"const": false, "type": "boolean"}
+  },
+  "required": ["schema_version", "component", "purpose", "package_digest", "context_selection_digest", "target_state", "primary_selection", "supporting_selections", "complete_package", "requires_confirmation", "no_receipt_issued", "u2_authority", "selection_digest"],
+  "title": "Complete primary artifact package proposed for later U1 confirmation",
+  "type": "object"
+}

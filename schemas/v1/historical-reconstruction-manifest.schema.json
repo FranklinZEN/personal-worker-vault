@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "component", "purpose", "authority_id", "admission_id", "bundle_id", "family", "parent_event_id", "parent_manifest_digest", "catalogue_digest", "selected_member_refs", "disclosure", "candidate_only", "operations", "expires_at", "manifest_digest"],
+  "properties": {
+    "schema_version": {"const": "1.0"}, "component": {"const": "vault-next-historical-reconstruction/1.0.0"},
+    "purpose": {"const": "historical_reconstruction"}, "authority_id": {"const": "vault-next-local-confirmation/v2"},
+    "admission_id": {"type": "string", "minLength": 1}, "bundle_id": {"type": "string", "minLength": 1},
+    "family": {"const": "meeting_workstream_history"}, "parent_event_id": {"type": "string", "minLength": 1},
+    "parent_manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "catalogue_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "selected_member_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "disclosure": {"const": "local_only"}, "candidate_only": {"const": true},
+    "operations": {"type": "array", "minItems": 3, "items": {"type": "string"}}, "expires_at": {"type": "string", "format": "date-time"},
+    "manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

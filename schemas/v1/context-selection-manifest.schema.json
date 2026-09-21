@@ -1,0 +1,78 @@
+{
+  "$id": "vault-next://schemas/v1/context-selection-manifest",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "component": {"const": "vault-next-primary-artifact/0.1.0", "type": "string"},
+    "default_mode_applied": {"type": "boolean"},
+    "excluded": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "reason": {"minLength": 1, "type": "string"},
+          "ref_id": {"minLength": 1, "type": "string"}
+        },
+        "required": ["ref_id", "reason"],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "included": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "content_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+          "display_alias": {"maxLength": 240, "minLength": 1, "type": "string"},
+          "kind": {"enum": ["source", "artifact", "work", "decision", "knowledge", "conversation_evidence"], "type": "string"},
+          "reason": {"minLength": 1, "type": "string"},
+          "recorded_sequence": {"type": "integer"},
+          "ref_id": {"minLength": 1, "type": "string"},
+          "role": {"enum": ["new", "history"], "type": "string"},
+          "version_id": {"minLength": 1, "type": "string"}
+        },
+        "required": ["ref_id", "version_id", "display_alias", "kind", "role", "content_sha256", "recorded_sequence", "reason"],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "mode": {"enum": ["new_only", "selected_history", "bounded_relevant_history"], "type": "string"},
+    "new_item_ids": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+    "no_source_fallback": {"const": true, "type": "boolean"},
+    "primary_artifact_kind": {"enum": ["meeting_debrief", "work_continuity", "deep_dive", "decision", "knowledge", "outbound"], "type": "string"},
+    "prior_context_reads": {"type": "integer"},
+    "processing": {
+      "additionalProperties": false,
+      "properties": {
+        "disclosure": {"enum": ["local_only", "visible_hosted_reasoning"], "type": "string"},
+        "retention": {"const": "u0_ephemeral", "type": "string"}
+      },
+      "required": ["disclosure", "retention"],
+      "type": "object"
+    },
+    "request_id": {"pattern": "^request_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "request_text": {"maxLength": 4096, "minLength": 1, "type": "string"},
+    "requested_outcome": {"enum": ["meeting", "work", "deep_dive", "decision", "knowledge", "executive_report"], "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "selected_history_ids": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+    "selection_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "skill": {
+      "additionalProperties": false,
+      "properties": {
+        "skill_id": {"minLength": 1, "type": "string"},
+        "state": {"enum": ["inactive", "evaluating", "active"], "type": "string"},
+        "version": {"minLength": 1, "type": "string"},
+        "visible": {"const": true, "type": "boolean"}
+      },
+      "required": ["skill_id", "version", "state", "visible"],
+      "type": "object"
+    },
+    "status": {"enum": ["complete", "unavailable"], "type": "string"},
+    "summary": {"maxLength": 2048, "minLength": 1, "type": "string"},
+    "target_aliases": {"items": {"minLength": 1, "type": "string"}, "type": "array", "uniqueItems": true},
+    "u0_only": {"const": true, "type": "boolean"},
+    "unavailable": {"items": {"minLength": 1, "type": "string"}, "type": "array"}
+  },
+  "required": ["schema_version", "component", "request_id", "request_text", "requested_outcome", "primary_artifact_kind", "skill", "mode", "default_mode_applied", "new_item_ids", "selected_history_ids", "target_aliases", "included", "excluded", "unavailable", "prior_context_reads", "processing", "status", "summary", "no_source_fallback", "u0_only", "selection_digest"],
+  "title": "Shared host-neutral context selection manifest",
+  "type": "object"
+}

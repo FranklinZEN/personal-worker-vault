@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["entry_id", "pilot_role", "parent_event_ids", "source_record_refs", "evidence_refs", "disposition", "reason", "proposed_change_class", "affected_views", "limitations"],
+  "properties": {
+    "entry_id": {"type": "string", "minLength": 1},
+    "pilot_role": {"enum": ["executive_owned_decision_with_owner_input", "redirected_or_discontinuous_initiative", "career_relevant_artifact"]},
+    "parent_event_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "source_record_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "evidence_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "disposition": {"enum": ["retained_as_is", "projection_only", "missing_relationship", "missing_attribution", "extraction_revision", "unresolved", "deferred"]},
+    "reason": {"type": "string", "minLength": 1},
+    "proposed_change_class": {"enum": ["none", "interpretation_amendment", "relationship_amendment", "projection_rebuild", "extraction_revision"]},
+    "affected_views": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "limitations": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+  }
+}

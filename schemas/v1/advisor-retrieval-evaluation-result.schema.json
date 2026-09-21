@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "case_id", "status", "selected_record_ids", "citations", "coverage_boundary", "labels", "public_sources", "source_recommended_questions", "advisor_derived_questions", "unavailable_claims", "no_persistence", "no_authority_effect", "current_work_adopted", "knowledge_promoted"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "case_id": {"type": "string", "minLength": 1},
+    "status": {"enum": ["complete", "partial", "unavailable", "ambiguous"]},
+    "selected_record_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "citations": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "coverage_boundary": {"type": "string", "minLength": 1},
+    "labels": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "public_sources": {"type": "array", "items": {"type": "object"}},
+    "source_recommended_questions": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "advisor_derived_questions": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "unavailable_claims": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "no_persistence": {"const": true},
+    "no_authority_effect": {"const": true},
+    "current_work_adopted": {"const": false},
+    "knowledge_promoted": {"const": false}
+  }
+}

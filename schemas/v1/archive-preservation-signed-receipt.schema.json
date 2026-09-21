@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "receipt_type", "authority_id", "authority_bundle_id", "algorithm", "key_id", "receipt", "manifest", "manifest_digest", "confirmation_display_sha256", "confirmed_at", "signature_base64"],
+  "properties": {"schema_version": {"const": "1.0"}, "receipt_type": {"const": "archive_preservation"}, "authority_id": {"const": "vault-next-local-confirmation/v2"}, "authority_bundle_id": {"type": "string"}, "algorithm": {"const": "ed25519"}, "key_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "receipt": {"type": "object"}, "manifest": {"type": "object"}, "manifest_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "confirmation_display_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}, "confirmed_at": {"type": "string", "format": "date-time"}, "signature_base64": {"type": "string", "minLength": 1}}
+}

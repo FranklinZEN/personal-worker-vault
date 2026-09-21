@@ -38,6 +38,15 @@ class ContentProfileTests(unittest.TestCase):
         self.assertEqual(docx.profile_id, "docx_wordprocessingml")
         self.assertTrue(docx.anchors[0].anchor.startswith("paragraph:"))
 
+    def test_owner_selected_anchor_budget_can_extend_default_without_changing_it(self) -> None:
+        material = "\n".join(f"# Section {index}\nEvidence {index}" for index in range(257)).encode()
+        with self.assertRaises(ContentProfileError):
+            self.router.route(material, declared_media_type="text/markdown", declared_extension=".md")
+        normalized = ContentProfileRouter(max_anchors=1024).route(
+            material, declared_media_type="text/markdown", declared_extension=".md"
+        )
+        self.assertEqual(len(normalized.anchors), 514)
+
     def test_s5cf_t03_hostile_docx_containers_fail_closed_without_fallback(self) -> None:
         external_relationship = (
             b'<?xml version="1.0"?><Relationships '

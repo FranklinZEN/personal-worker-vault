@@ -1,0 +1,5 @@
+{
+  "$id": "vault-next://schemas/v1/historical-owner-confirmed-continuity-supplement-receipt", "$schema": "https://json-schema.org/draft/2020-12/schema", "type": "object", "additionalProperties": false,
+  "properties": {"schema_version": {"const": "1.0"}, "receipt_id": {"pattern": "^receipt_[0-7][0-9A-HJKMNP-TV-Z]{25}$"}, "authority_id": {"const": "vault-next-local-confirmation/v2"}, "purpose": {"const": "historical_owner_confirmed_continuity_supplement"}, "admission_id": {"pattern": "^private_admission_[0-7][0-9A-HJKMNP-TV-Z]{25}$"}, "bundle_id": {"type": "string", "minLength": 1}, "manifest_digest": {"pattern": "^[0-9a-f]{64}$"}, "issued_at": {"format": "date-time"}, "expires_at": {"format": "date-time"}},
+  "required": ["schema_version", "receipt_id", "authority_id", "purpose", "admission_id", "bundle_id", "manifest_digest", "issued_at", "expires_at"]
+}

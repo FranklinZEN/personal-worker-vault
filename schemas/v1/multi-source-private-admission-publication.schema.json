@@ -1,0 +1,21 @@
+{
+  "$id": "vault-next://schemas/v1/multi-source-private-admission-publication",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "admission_id": {"pattern": "^private_admission_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "artifact_object_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "candidate_package_object_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "event_id": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "manifest_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "publication_type": {"const": "chat_first_u1_multi_source_save", "type": "string"},
+    "receipt_id": {"pattern": "^receipt_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "recorded_at": {"format": "date-time", "type": "string"},
+    "relationship_ledger_object_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "source_items": {"items": {"type": "object"}, "minItems": 4, "type": "array"}
+  },
+  "required": ["schema_version", "publication_type", "event_id", "admission_id", "manifest_digest", "receipt_id", "source_items", "artifact_object_sha256", "candidate_package_object_sha256", "relationship_ledger_object_sha256", "recorded_at"],
+  "title": "Real-private immutable ordered multi-source admission event",
+  "type": "object"
+}

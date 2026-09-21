@@ -1,0 +1,5 @@
+{
+  "$id": "vault-next://schemas/v1/historical-owner-confirmed-continuity-supplement-display", "$schema": "https://json-schema.org/draft/2020-12/schema", "type": "object", "additionalProperties": false,
+  "properties": {"schema_version": {"const": "1.0"}, "authority_id": {"const": "vault-next-local-confirmation/v2"}, "authority_bundle_id": {"pattern": "^bundle_[0-7][0-9A-HJKMNP-TV-Z]{25}$"}, "purpose": {"const": "historical_owner_confirmed_continuity_supplement"}, "manifest": {"type": "object"}, "manifest_digest": {"pattern": "^[0-9a-f]{64}$"}, "receipt": {"type": "object"}},
+  "required": ["schema_version", "authority_id", "authority_bundle_id", "purpose", "manifest", "manifest_digest", "receipt"]
+}

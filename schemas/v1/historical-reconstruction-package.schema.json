@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "component", "family", "primary", "supporting_artifacts", "relationships", "exceptions", "candidate_only", "no_activation", "no_knowledge_promotion", "no_current_work", "no_u2", "package_digest"],
+  "properties": {
+    "schema_version": {"const": "1.0"}, "component": {"const": "vault-next-historical-reconstruction/1.0.0"}, "family": {"const": "meeting_workstream_history"},
+    "primary": {"type": "object"}, "supporting_artifacts": {"type": "array", "items": {"type": "object"}},
+    "relationships": {"type": "array", "items": {"type": "object"}}, "exceptions": {"type": "array", "items": {"type": "object"}},
+    "candidate_only": {"const": true}, "no_activation": {"const": true}, "no_knowledge_promotion": {"const": true}, "no_current_work": {"const": true}, "no_u2": {"const": true},
+    "package_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

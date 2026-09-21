@@ -1,0 +1,21 @@
+{
+  "$id": "vault-next://schemas/v1/private-admission-publication",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "admission_id": {"pattern": "^private_admission_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "artifact_object_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "candidate_package_object_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "event_id": {"pattern": "^event_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "manifest_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "receipt_id": {"pattern": "^receipt_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "recorded_at": {"format": "date-time", "type": "string"},
+    "relationship_ledger_object_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "source_object_sha256": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "source_version": {"type": "object"}
+  },
+  "required": ["schema_version", "event_id", "admission_id", "manifest_digest", "receipt_id", "source_version", "source_object_sha256", "artifact_object_sha256", "candidate_package_object_sha256", "relationship_ledger_object_sha256", "recorded_at"],
+  "title": "Real-private immutable admission event",
+  "type": "object"
+}

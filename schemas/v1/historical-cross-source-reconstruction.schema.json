@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "reconstruction_id", "reconstruction_version", "family", "method_version", "prompt_version", "observation_digests", "relationships", "clusters", "exceptions", "primary", "views", "candidate_only", "no_current_work", "no_promotion", "no_activation", "no_u2", "reconstruction_digest"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "reconstruction_id": {"type": "string", "minLength": 1},
+    "reconstruction_version": {"const": 1},
+    "family": {"const": "meeting_workstream_history"},
+    "method_version": {"const": "historical_relationship_reconstructor/1.0.0"},
+    "prompt_version": {"const": "historical_relationship_reconstructor/1.0.0"},
+    "observation_digests": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^[0-9a-f]{64}$"}},
+    "relationships": {"type": "array", "items": {"type": "object"}},
+    "clusters": {"type": "array", "items": {"type": "object"}},
+    "exceptions": {"type": "array", "items": {"type": "object"}},
+    "primary": {"type": "object"},
+    "views": {"type": "object"},
+    "candidate_only": {"const": true},
+    "no_current_work": {"const": true},
+    "no_promotion": {"const": true},
+    "no_activation": {"const": true},
+    "no_u2": {"const": true},
+    "reconstruction_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "record_type", "component", "supplement_id", "parent_binding", "decision_statement", "decision_makers", "owner_roles", "reporters", "record_approvers", "rationale", "evidence_anchors", "event_time", "effective_time", "recorded_at", "owner_known_at", "retrospective_recollections", "candidate_only", "no_current_work", "no_promotion", "no_activation", "no_u1", "no_u2", "parent_records_unchanged", "supplement_digest"],
+  "properties": {
+    "schema_version": {"const": "1.0"},
+    "record_type": {"const": "historical_decision_attribution_supplement/1.0"},
+    "component": {"const": "historical_decision_attribution_supplement/1.0.0"},
+    "supplement_id": {"type": "string", "minLength": 1},
+    "parent_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["event_id", "event_sha256", "package_digest", "decision_ref"],
+      "properties": {
+        "event_id": {"type": "string", "minLength": 1},
+        "event_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "package_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "decision_ref": {"type": "string", "minLength": 1}
+      }
+    },
+    "decision_statement": {"type": "string", "minLength": 1},
+    "decision_makers": {"type": "array", "minItems": 1, "items": {"type": "object"}},
+    "owner_roles": {"type": "array", "minItems": 1, "items": {"type": "object"}},
+    "reporters": {"type": "array", "minItems": 1, "items": {"type": "object"}},
+    "record_approvers": {"type": "array", "minItems": 1, "items": {"type": "object"}},
+    "rationale": {"type": "object"},
+    "evidence_anchors": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "event_time": {"type": ["string", "null"]},
+    "effective_time": {"type": ["string", "null"]},
+    "recorded_at": {"type": "string", "format": "date-time"},
+    "owner_known_at": {"type": ["string", "null"]},
+    "retrospective_recollections": {"type": "array", "items": {"type": "object"}},
+    "candidate_only": {"const": true},
+    "no_current_work": {"const": true},
+    "no_promotion": {"const": true},
+    "no_activation": {"const": true},
+    "no_u1": {"const": true},
+    "no_u2": {"const": true},
+    "parent_records_unchanged": {"const": true},
+    "supplement_digest": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}

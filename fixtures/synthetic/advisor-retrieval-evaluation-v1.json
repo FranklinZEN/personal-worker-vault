@@ -1,0 +1,92 @@
+{
+  "schema_version": "1.0",
+  "component": "advisor_retrieval_evaluation/1.0.0",
+  "description": "Invented frozen A2 cases; no personal or employer history is present.",
+  "cases": [
+    {
+      "schema_version": "1.0",
+      "case_id": "A2-01-next-meeting",
+      "intent": "next_meeting",
+      "temporal_mode": "current",
+      "query": "Prepare me for the next Lantern review.",
+      "scope": "case-lantern",
+      "expected_record_ids": ["record-lantern-current", "record-lantern-open-question"],
+      "forbidden_record_ids": ["record-unrelated"],
+      "required_labels": ["candidate_history", "currentness_checked", "coverage_boundary"],
+      "expected_unknowns": ["meeting_date_not_supplied"],
+      "different_wording": false,
+      "synthetic_only": true
+    },
+    {
+      "schema_version": "1.0",
+      "case_id": "A2-02-direction-as-of",
+      "intent": "direction_change",
+      "temporal_mode": "as_of",
+      "query": "Why had Project Cobalt changed course by 2026-05-01?",
+      "scope": "case-cobalt-through-2026-05-01",
+      "expected_record_ids": ["record-cobalt-original", "record-cobalt-redirection"],
+      "forbidden_record_ids": ["record-cobalt-later-outcome"],
+      "required_labels": ["historical_as_of", "rationale_not_stated", "no_hindsight"],
+      "expected_unknowns": ["executive_rationale_not_recorded"],
+      "different_wording": false,
+      "synthetic_only": true
+    },
+    {
+      "schema_version": "1.0",
+      "case_id": "A2-03-analogy-renamed",
+      "intent": "analogous_case",
+      "temporal_mode": "comparative",
+      "query": "Find an older example of narrowing a broad request to escape a blocked dependency.",
+      "scope": "permitted-history",
+      "expected_record_ids": ["record-amber-formerly-topaz"],
+      "forbidden_record_ids": ["record-superficial-keyword-match"],
+      "required_labels": ["different_wording", "renamed_case", "analogy_qualified"],
+      "expected_unknowns": ["transferability_requires_owner_judgment"],
+      "different_wording": true,
+      "synthetic_only": true
+    },
+    {
+      "schema_version": "1.0",
+      "case_id": "A2-04-leadership-evidence",
+      "intent": "leadership_evidence",
+      "temporal_mode": "comparative",
+      "query": "What shows I led through ambiguity without claiming the team's outcome as mine?",
+      "scope": "permitted-career-history",
+      "expected_record_ids": ["record-owner-framing", "record-team-delivery"],
+      "forbidden_record_ids": ["record-invented-metric"],
+      "required_labels": ["personal_contribution", "team_contribution", "outcome_evidence_setting"],
+      "expected_unknowns": ["organizational_impact_not_measured"],
+      "different_wording": true,
+      "synthetic_only": true
+    },
+    {
+      "schema_version": "1.0",
+      "case_id": "A2-05-public-practice",
+      "intent": "public_practice_comparison",
+      "temporal_mode": "current",
+      "query": "Compare our small-team evaluation approach with current public practice.",
+      "scope": "case-orchid-and-requested-public-research",
+      "expected_record_ids": ["record-orchid-personal-precedent"],
+      "forbidden_record_ids": ["record-public-source-as-historical-input"],
+      "required_labels": ["personal_precedent", "public_source", "applicability", "advisor_proposed_check"],
+      "expected_unknowns": ["no_universal_best_practice"],
+      "different_wording": false,
+      "synthetic_only": true
+    },
+    {
+      "schema_version": "1.0",
+      "case_id": "A2-06-provisional-history",
+      "intent": "next_meeting",
+      "temporal_mode": "current",
+      "query": "Use the saved candidate history, but do not turn it into a commitment.",
+      "scope": "case-saffron",
+      "expected_record_ids": ["record-saffron-provisional"],
+      "forbidden_record_ids": ["record-saffron-unapproved-current"],
+      "required_labels": ["provisional_evidence", "not_current_work", "not_promoted_knowledge"],
+      "expected_unknowns": ["latest_outcome_not_recorded"],
+      "different_wording": false,
+      "synthetic_only": true
+    }
+  ],
+  "fixture_digest": "fe6147a387c36c40f357c8d9c139a2c1fb20b604d0dea7843ac0eb9577badb39"
+}

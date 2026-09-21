@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "relationship_id", "subject_ref", "object_ref", "predicate", "basis_type", "evidence_refs", "proposer", "method_version", "status", "recorded_at", "effective_at", "confidence", "omissions"],
+  "properties": {
+    "schema_version": {"const": "1.0"}, "relationship_id": {"type": "string", "minLength": 1},
+    "subject_ref": {"type": "string", "minLength": 1}, "object_ref": {"type": "string", "minLength": 1},
+    "predicate": {"enum": ["same_bytes", "revises", "summarizes", "derived_from", "cites", "supports", "contradicts", "prepares_for", "debriefs", "discusses", "produced", "reports_decision", "proposes_follow_up", "depends_on", "possibly_same_artifact", "possibly_same_workstream", "primary_of", "supports_primary"]},
+    "basis_type": {"enum": ["exact_bytes", "export_declared", "explicit_reference", "timestamp_adjacency", "content_evidence", "bounded_analysis"]},
+    "evidence_refs": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "proposer": {"type": "string", "minLength": 1}, "method_version": {"type": "string", "minLength": 1},
+    "status": {"enum": ["candidate", "source_reported", "structurally_verified", "rejected", "superseded", "owner_confirmed"]},
+    "recorded_at": {"type": "string", "format": "date-time"}, "effective_at": {"type": ["string", "null"], "format": "date-time"},
+    "confidence": {"enum": ["high", "medium", "low", "unavailable"]}, "omissions": {"type": "array", "items": {"type": "string"}}
+  }
+}

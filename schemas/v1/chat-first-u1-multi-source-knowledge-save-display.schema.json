@@ -1,0 +1,17 @@
+{
+  "$id": "vault-next://schemas/v1/chat-first-u1-multi-source-knowledge-save-display",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Exact display for knowledge-lineage multi-source U1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"const": "1.0", "type": "string"},
+    "authority_id": {"const": "vault-next-local-confirmation/v2", "type": "string"},
+    "authority_bundle_id": {"pattern": "^bundle_[0-7][0-9A-HJKMNP-TV-Z]{25}$", "type": "string"},
+    "purpose": {"const": "chat_first_u1_multi_source_knowledge_save", "type": "string"},
+    "manifest": {"type": "object"},
+    "manifest_digest": {"pattern": "^[0-9a-f]{64}$", "type": "string"},
+    "receipt": {"type": "object"}
+  },
+  "required": ["schema_version", "authority_id", "authority_bundle_id", "purpose", "manifest", "manifest_digest", "receipt"]
+}

@@ -1,0 +1,17 @@
+{
+  "$id": "vault-next://schemas/v1/private-admission-event",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "candidate_package": {"type": "object"},
+    "manifest": {"type": "object"},
+    "receipt": {"type": "object"},
+    "relationship_assertions": {"items": {"type": "object"}, "type": "array"},
+    "result": {"type": "object"},
+    "schema_version": {"const": "1.0", "type": "string"},
+    "source_version": {"type": "object"}
+  },
+  "required": ["schema_version", "manifest", "receipt", "source_version", "result", "candidate_package", "relationship_assertions"],
+  "title": "Synthetic F1 sole private-admission publication payload",
+  "type": "object"
+}
